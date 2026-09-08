@@ -152,14 +152,32 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
   seed + logowanie z prawdziwą bazą wymagają jeszcze przetestowania —
   patrz checklist niżej.
 
+### 2026-09-09 — Pierwszy udany deployment end-to-end (dom, za NPM)
+- Dzięki tymczasowemu dostępowi do Dockera przetestowałem naprawdę cały
+  cykl (obraz Alpine, prawdziwy MySQL 8.4, migracje, seed, logowanie,
+  sesja, CRUD, log audytowy, blokada konta) i znalazłem 4 blokujące
+  wdrożenie błędy — szczegóły wyżej. Wszystkie naprawione i zweryfikowane.
+- Po stronie infrastruktury doprecyzowane i rozwiązane po drodze:
+  - `PUBLIC_API_URL`/`VITE_API_URL` (build arg zaszywany w JS) okazał się
+    zbyt łatwy do popsucia przy zmianie domeny — zastąpiony wołaniem
+    względnym `/api/...` (ten sam origin), wymaga jednorazowego Custom
+    Location `/api` -> `backend:4000` w NGINX Proxy Managerze.
+  - `/opt/skarbnik` na serwerze nie było prawdziwym repo git (pliki
+    skopiowane ręcznie) — naprawione przez `git init` + `fetch` +
+    `reset --hard origin/master` w miejscu, bez utraty `.env`.
+- **Wynik:** `https://skarbnik.wachcio.dom` działa od A do Z — logowanie,
+  sesja, `/api/health` zwraca `database: connected`. Pierwszy realny,
+  działający deployment.
+- Commity od teraz pisane po angielsku (wcześniejsza historia przepisana
+  z polskiego na angielski, treść plików bez zmian).
+
 ## Następne kroki (checklist)
 - [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
 - [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
 - [x] Struktura repozytorium (monorepo: `frontend/`, `backend/`) i
       `docker-compose.yml`.
-- [ ] **Do zrobienia przez użytkownika:** `docker compose up --build` +
-      `prisma migrate deploy` + `prisma:seed` — pierwszy pełny test
-      end-to-end z prawdziwym MySQL (patrz README.md „Szybki start”).
+- [x] Pełny test end-to-end z prawdziwym MySQL i działającym deploymentem
+      za NGINX Proxy Managerem (dom).
 - [ ] Implementacja pozostałych modułów backendu: kategorie/kwoty, wpłaty,
       ustawienia, raporty (zaległości/karta dziecka/zbiorczy + eksport),
       import/eksport JSON, zarządzanie kontami rodziców.
