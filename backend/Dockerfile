@@ -4,6 +4,10 @@
 
 FROM node:20-alpine AS build
 WORKDIR /app
+# Alpine domyślnie nie ma OpenSSL — bez niego `prisma generate` nie potrafi
+# wykryć wersji libssl i pobiera/generuje niewłaściwy silnik zapytań
+# (błąd w runtime: "Error loading shared library libssl.so.1.1").
+RUN apk add --no-cache openssl
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
@@ -12,6 +16,8 @@ RUN npm run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
+# Ta sama biblioteka musi być też obecna w runtime, nie tylko przy generate.
+RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

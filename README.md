@@ -17,6 +17,11 @@ docker compose exec backend npm run prisma:migrate:deploy
 docker compose exec backend npm run prisma:seed
 ```
 
+Kolejność ma znaczenie: `migrate:deploy` musi pójść zaraz po starcie, zanim
+zaczniesz cokolwiek klikać w aplikacji — backend startuje bez czekania na
+istnienie tabel, więc np. logowanie przed migracją zwróci błąd 500
+(`database: unreachable`/brak tabel), co jest oczekiwane i mija po migracji.
+
 Frontend: `http://localhost:5173` (lub `FRONTEND_PORT` z `.env`).
 Backend: `http://localhost:4000/api/health` (lub `APP_PORT` z `.env`).
 

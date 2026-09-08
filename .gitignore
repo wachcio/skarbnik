@@ -20,8 +20,9 @@ certs/
 *.key
 *.crt
 
-# Baza danych / backupy
+# Baza danych / backupy (NIE migracje Prisma — te muszą być w repo)
 *.sql
+!backend/prisma/migrations/**/*.sql
 *.sql.gz
 backups/
 mysql-data/

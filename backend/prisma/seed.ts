@@ -1,8 +1,15 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "../src/lib/password";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+// Nie importujemy z ../src/lib/password: w obrazie produkcyjnym kopiowany
+// jest tylko dist/ (patrz Dockerfile), więc ../src nie istnieje w runtime.
+const SALT_ROUNDS = 12;
+async function hashPassword(plain: string): Promise<string> {
+  return bcrypt.hash(plain, SALT_ROUNDS);
+}
 
 async function main() {
   const semesters = await Promise.all(

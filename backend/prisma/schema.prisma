@@ -181,6 +181,20 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+/// Tabela sesji używana przez express-mysql-session (middleware/session.ts).
+/// Prisma Client nigdy jej nie odpytuje — zarządzamy nią tylko po to, żeby
+/// powstawała przez migracje (w prawidłowej kolejności deploymentu), a nie
+/// przez auto-create biblioteki sesji w runtime, co gubiło się z kolejnością
+/// "start kontenera -> migrate deploy" (błąd P3005: "schema not empty").
+/// Kolumny muszą dokładnie odpowiadać konfiguracji w middleware/session.ts.
+model Session {
+  sessionId String  @id @map("session_id") @db.VarChar(128)
+  expires   Int     @db.UnsignedInt
+  data      String? @db.MediumText
+
+  @@map("sessions")
+}
+
 /// Ustawienia aplikacji — jeden wiersz (id = "singleton").
 model Setting {
   id                String   @id @default("singleton")

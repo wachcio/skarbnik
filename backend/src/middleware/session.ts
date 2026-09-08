@@ -24,7 +24,10 @@ export function applySessionMiddleware(app: Express) {
 
   const store = new MySQLStore(
     {
-      createDatabaseTable: true,
+      // Tabela `sessions` powstaje przez migracje Prisma (schema.prisma),
+      // nie przez auto-create tej biblioteki — patrz komentarz przy
+      // modelu Session w schema.prisma.
+      createDatabaseTable: false,
       schema: {
         tableName: "sessions",
         columnNames: {
