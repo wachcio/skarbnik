@@ -1,15 +1,13 @@
-/* Jasny motyw: papier + morska zieleń (spójne z dokumentem specyfikacji).
-   Ciemny motyw: granat + niebieski akcent (celowo inna paleta niż jasny —
-   bez zielonkawego odcienia). */
+/* Jasny i ciemny motyw: spójna niebiesko-granatowa gama (bez zieleni). */
 
 :root {
-  --bg: #eef2ec;
+  --bg: #eef1f6;
   --surface: #ffffff;
-  --surface-alt: #e2e9df;
-  --ink: #16231f;
-  --ink-muted: #4d5c54;
-  --line: #c8d1c3;
-  --accent: #28604f;
+  --surface-alt: #e2e8f2;
+  --ink: #16202f;
+  --ink-muted: #4d5a70;
+  --line: #c8d0dd;
+  --accent: #2955a3;
   --accent-contrast: #ffffff;
   --danger: #a24a1f;
 }
