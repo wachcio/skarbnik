@@ -1,4 +1,6 @@
-/* Paleta spójna z dokumentem specyfikacji projektu (papier + morska zieleń) */
+/* Jasny motyw: papier + morska zieleń (spójne z dokumentem specyfikacji).
+   Ciemny motyw: granat + niebieski akcent (celowo inna paleta niż jasny —
+   bez zielonkawego odcienia). */
 
 :root {
   --bg: #eef2ec;
@@ -14,14 +16,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #101c17;
-    --surface: #16251f;
-    --surface-alt: #1d332a;
-    --ink: #e7efe9;
-    --ink-muted: #9fb3a7;
-    --line: #2c4339;
-    --accent: #72c9ab;
-    --accent-contrast: #0f2a22;
+    --bg: #0b1220;
+    --surface: #121c30;
+    --surface-alt: #1a2844;
+    --ink: #e8edf7;
+    --ink-muted: #93a1c2;
+    --line: #253758;
+    --accent: #5b8cff;
+    --accent-contrast: #0b1220;
     --danger: #e2a074;
   }
 }
