@@ -20,6 +20,13 @@ docker compose exec backend npm run prisma:seed
 Frontend: `http://localhost:5173` (lub `FRONTEND_PORT` z `.env`).
 Backend: `http://localhost:4000/api/health` (lub `APP_PORT` z `.env`).
 
+**Za reverse proxy (NGINX Proxy Manager) — wymagane:** frontend woła zawsze
+względne `/api/...` (ten sam origin co strona, zero CORS). Na Proxy Hoście
+dla domeny appki dodaj **Custom Location** `/api` → `backend:4000` (scheme
+`http` — TLS i tak kończy NPM). Bez tego panel logowania zwróci błąd
+połączenia, bo przeglądarka będzie szukać API pod adresem, który nie
+istnieje.
+
 Logowanie: `ADMIN_EMAIL` / `ADMIN_PASSWORD` z `.env` (utworzone przez seed).
 
 ## Praca lokalna bez Dockera

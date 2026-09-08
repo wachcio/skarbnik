@@ -47,10 +47,7 @@ services:
       - certs:/certs:ro
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_API_URL: ${PUBLIC_API_URL}
+    build: ./frontend
     restart: unless-stopped
     depends_on:
       - backend
