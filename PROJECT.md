@@ -119,12 +119,50 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
 - Dodano ten plik (`PROJECT.md`) jako dziennik projektu.
 - Kod aplikacji jeszcze nie istnieje.
 
+### 2026-09-08 — Szkielet aplikacji (backend, frontend, Docker)
+- **Prisma:** pełny schemat (`backend/prisma/schema.prisma`) — User,
+  Child, ParentChildLink (M:N), Semester, Category + CategoryTarget +
+  ChildCategoryAmount (kwoty domyślne i nadpisania per dziecko), Payment,
+  AuditLog (migawki JSON, przetrwają hard delete), Setting (singleton).
+- **Kontrakt API:** spisany w `docs/API.md`, z oznaczeniem co już działa,
+  a co jest na razie stubem (501).
+- **Backend zaimplementowany:** logowanie/wylogowanie/sesja (`/api/auth`),
+  tymczasowa blokada logowania z eskalacją (15 min → 1h → 24h) + log
+  audytowy blokad, pełny CRUD dzieci z uprawnieniami admin/rodzic,
+  lista semestrów, widok publiczny (`/api/public/summary`) liczący
+  realną sumę kwot docelowych vs wpłat. Reszta modułów (kategorie,
+  wpłaty, ustawienia, raporty, backup, konta rodziców) — trasy i
+  uprawnienia gotowe, logika zwraca `501` do zaimplementowania.
+- **Frontend zaimplementowany:** ekran logowania (wpięty w prawdziwe
+  `/api/auth`), przełącznik motywu jasny/ciemny/systemowy, layout
+  mobile-first.
+- **Docker:** `docker-compose.yml` (mysql + backend + frontend),
+  Dockerfile dla obu usług, `.env.example` w roli + w katalogach
+  `backend/`/`frontend/`.
+- **Weryfikacja lokalna** (Node/Docker doinstalowane tymczasowo do
+  `/tmp`, nic nie zmieniono w systemie): `prisma generate`, `tsc --noEmit`,
+  build obu projektów — czyste. Ręczne testy endpointów ujawniły realny
+  błąd: handlery `async` w Express 4 bez opakowania nie łapią odrzuconych
+  obietnic — awaria bazy ubijała cały proces. Naprawione (`asyncHandler`,
+  patrz `backend/src/lib/asyncHandler.ts`) i ponownie przetestowane.
+  Dodatkowo naprawiony wyciek plików wygenerowanych przez `tsc -b`
+  (`vite.config.js`/`.d.ts`, `*.tsbuildinfo`) do repo.
+- **Nie przetestowane end-to-end:** to środowisko nie miało uprawnień do
+  Dockera ani zainstalowanego MySQL, więc `docker compose up` + migracje +
+  seed + logowanie z prawdziwą bazą wymagają jeszcze przetestowania —
+  patrz checklist niżej.
+
 ## Następne kroki (checklist)
-- [ ] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
-- [ ] Kontrakt API — lista endpointów REST i uprawnień per rola.
-- [ ] Struktura repozytorium (monorepo: `frontend/`, `backend/`) i
+- [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
+- [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
+- [x] Struktura repozytorium (monorepo: `frontend/`, `backend/`) i
       `docker-compose.yml`.
-- [ ] Makiety ekranów mobile-first (lista dzieci, karta dziecka, wpłaty,
-      raporty).
-- [ ] Implementacja backendu.
-- [ ] Implementacja frontendu.
+- [ ] **Do zrobienia przez użytkownika:** `docker compose up --build` +
+      `prisma migrate deploy` + `prisma:seed` — pierwszy pełny test
+      end-to-end z prawdziwym MySQL (patrz README.md „Szybki start”).
+- [ ] Implementacja pozostałych modułów backendu: kategorie/kwoty, wpłaty,
+      ustawienia, raporty (zaległości/karta dziecka/zbiorczy + eksport),
+      import/eksport JSON, zarządzanie kontami rodziców.
+- [ ] Makiety / ekrany mobile-first: lista i karta dziecka, wpłaty,
+      raporty, panel ustawień.
+- [ ] Frontend: pełne ekrany po zalogowaniu (obecnie tylko placeholder).
