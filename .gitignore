@@ -1,0 +1,44 @@
+# Zależności
+node_modules/
+**/node_modules/
+
+# Build/dist
+dist/
+build/
+**/dist/
+**/build/
+.vite/
+
+# Zmienne środowiskowe i sekrety
+.env
+.env.*
+!.env.example
+
+# Certyfikaty / klucze TLS (nigdy nie trafiają do repo)
+certs/
+*.pem
+*.key
+*.crt
+
+# Baza danych / backupy
+*.sql
+*.sql.gz
+backups/
+mysql-data/
+prisma/migrations/dev.db
+
+# Logi
+*.log
+logs/
+
+# Testy / coverage
+coverage/
+
+# Edytor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
