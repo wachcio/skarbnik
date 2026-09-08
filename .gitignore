@@ -43,6 +43,7 @@ frontend/vite.config.d.ts
 .idea/
 .DS_Store
 Thumbs.db
+*.swp
 
 # Docker
 docker-compose.override.yml
