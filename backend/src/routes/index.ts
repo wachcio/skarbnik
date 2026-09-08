@@ -1,0 +1,26 @@
+import { Router } from "express";
+import { healthRouter } from "./health.routes";
+import { authRouter } from "./auth.routes";
+import { usersRouter } from "./users.routes";
+import { childrenRouter } from "./children.routes";
+import { semestersRouter } from "./semesters.routes";
+import { categoriesRouter } from "./categories.routes";
+import { paymentsRouter } from "./payments.routes";
+import { settingsRouter } from "./settings.routes";
+import { reportsRouter } from "./reports.routes";
+import { backupRouter } from "./backup.routes";
+import { publicRouter } from "./public.routes";
+
+export const apiRouter = Router();
+
+apiRouter.use("/health", healthRouter);
+apiRouter.use("/auth", authRouter);
+apiRouter.use("/users", usersRouter);
+apiRouter.use("/children", childrenRouter);
+apiRouter.use("/semesters", semestersRouter);
+apiRouter.use("/categories", categoriesRouter);
+apiRouter.use("/payments", paymentsRouter);
+apiRouter.use("/settings", settingsRouter);
+apiRouter.use("/reports", reportsRouter);
+apiRouter.use("/backup", backupRouter);
+apiRouter.use("/public", publicRouter);

@@ -1,0 +1,69 @@
+/* Paleta spójna z dokumentem specyfikacji projektu (papier + morska zieleń) */
+
+:root {
+  --bg: #eef2ec;
+  --surface: #ffffff;
+  --surface-alt: #e2e9df;
+  --ink: #16231f;
+  --ink-muted: #4d5c54;
+  --line: #c8d1c3;
+  --accent: #28604f;
+  --accent-contrast: #ffffff;
+  --danger: #a24a1f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101c17;
+    --surface: #16251f;
+    --surface-alt: #1d332a;
+    --ink: #e7efe9;
+    --ink-muted: #9fb3a7;
+    --line: #2c4339;
+    --accent: #72c9ab;
+    --accent-contrast: #0f2a22;
+    --danger: #e2a074;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #101c17;
+  --surface: #16251f;
+  --surface-alt: #1d332a;
+  --ink: #e7efe9;
+  --ink-muted: #9fb3a7;
+  --line: #2c4339;
+  --accent: #72c9ab;
+  --accent-contrast: #0f2a22;
+  --danger: #e2a074;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+/* 16px minimum, żeby Safari na iOS nie robił auto-zoomu przy fokusie pola */
+input,
+select {
+  font-size: 1rem;
+}

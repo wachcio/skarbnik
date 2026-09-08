@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PARENT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOCKOUT
+}
+
+/// Konto użytkownika — administrator/skarbnik albo rodzic.
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String
+  role                Role
+  displayName         String
+
+  // Ochrona przed atakami na logowanie — patrz src/services/auth.service.ts
+  failedLoginAttempts Int       @default(0)
+  lockLevel           Int       @default(0)
+  lockedUntil         DateTime?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  childLinks ParentChildLink[]
+  auditLogs  AuditLog[]
+
+  @@map("users")
+}
+
+/// Dziecko w grupie przedszkolnej.
+model Child {
+  id                 String   @id @default(cuid())
+  firstName          String
+  lastName           String
+  parentContactEmail String?
+  parentContactPhone String?
+  notes              String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentLinks     ParentChildLink[]
+  payments        Payment[]
+  categoryAmounts ChildCategoryAmount[]
+
+  @@map("children")
+}
+
+/// Powiązanie konta rodzica z dzieckiem — relacja wiele-do-wielu
+/// (jedno dziecko może mieć kilka kont rodziców, jeden rodzic może
+/// mieć kilkoro dzieci w grupie).
+model ParentChildLink {
+  id      String @id @default(cuid())
+  userId  String
+  childId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, childId])
+  @@map("parent_child_links")
+}
+
+/// Semestr bieżącego roku szkolnego — zawsze dokładnie dwa (1 i 2),
+/// bez archiwizacji wielu lat (patrz PROJECT.md).
+model Semester {
+  id     String @id @default(cuid())
+  number Int    @unique
+  label  String
+
+  categoryTargets      CategoryTarget[]
+  childCategoryAmounts ChildCategoryAmount[]
+  payments             Payment[]
+
+  @@map("semesters")
+}
+
+/// Kategoria składki, w pełni zarządzana przez skarbnika z poziomu appki.
+model Category {
+  id       String  @id @default(cuid())
+  name     String
+  archived Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  targets      CategoryTarget[]
+  childAmounts ChildCategoryAmount[]
+  payments     Payment[]
+
+  @@map("categories")
+}
+
+/// Domyślna kwota docelowa danej kategorii w danym semestrze,
+/// wspólna dla całej grupy.
+model CategoryTarget {
+  id         String  @id @default(cuid())
+  categoryId String
+  semesterId String
+  amount     Decimal @db.Decimal(10, 2)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, semesterId])
+  @@map("category_targets")
+}
+
+/// Nadpisanie kwoty docelowej dla konkretnego dziecka (np. zniżka
+/// rodzeństwa) — jeśli brak wiersza, obowiązuje CategoryTarget.
+model ChildCategoryAmount {
+  id         String  @id @default(cuid())
+  childId    String
+  categoryId String
+  semesterId String
+  amount     Decimal @db.Decimal(10, 2)
+
+  child    Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, categoryId, semesterId])
+  @@map("child_category_amounts")
+}
+
+/// Pojedyncza wpłata — dopuszczalne wiele częściowych wpłat na tę
+/// samą kategorię/semestr.
+model Payment {
+  id          String   @id @default(cuid())
+  childId     String
+  categoryId  String
+  semesterId  String
+  amount      Decimal  @db.Decimal(10, 2)
+  paidAt      DateTime
+  description String?
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  child    Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  // Restrict: nie da się usunąć/zarchiwizować encji, do której są wpłaty —
+  // kategorie usuwa się przez soft delete (pole archived), nie hard delete.
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+
+  @@map("payments")
+}
+
+/// Log audytowy — kto i kiedy dodał/zmienił/usunął dane, oraz zdarzenia
+/// blokady logowania. Przechowuje niezależne migawki danych (dataBefore/
+/// dataAfter), więc historia przetrwa nawet hard delete rekordu źródłowego.
+model AuditLog {
+  id               String      @id @default(cuid())
+  entityType       String
+  entityId         String
+  action           AuditAction
+  performedById    String?
+  performedByLabel String
+  dataBefore       Json?
+  dataAfter        Json?
+
+  createdAt DateTime @default(now())
+
+  performedBy User? @relation(fields: [performedById], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+/// Ustawienia aplikacji — jeden wiersz (id = "singleton").
+model Setting {
+  id                String   @id @default("singleton")
+  publicViewEnabled Boolean  @default(false)
+  activeSemesterId  String?
+  updatedAt         DateTime @updatedAt
+
+  @@map("settings")
+}
