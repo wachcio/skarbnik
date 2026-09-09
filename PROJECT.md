@@ -312,6 +312,25 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-09 (9) — Limit sumy wpłat dziecka na semestr
+- Zabezpieczenie: suma wpłat dziecka w danym semestrze (po wszystkich
+  kategoriach razem, nie per kategoria) nie może przewyższyć sumy kwot
+  docelowych wszystkich kategorii dla tego dziecka w tym semestrze —
+  z uwzględnieniem nadpisań kwot per dziecko. Świadomie limit zbiorczy,
+  nie per kategoria — rodzic może dopłacić więcej do jednej kategorii,
+  mniej do innej, byle suma się zgadzała.
+- Backend: `getChildLedger`/`getChildSemesterTotals` (reużyte, nie
+  duplikowane) sprawdzane w `POST` i `PATCH /api/payments`. Edycja
+  scala częściową zmianę z istniejącym rekordem i wyklucza starą kwotę
+  edytowanej wpłaty z sumy — inaczej liczyłaby się podwójnie.
+- Frontend bez zmian — formularze wpłat już wyświetlały `error` z
+  odpowiedzi API wprost.
+- Zweryfikowane na Dockerze+MySQL: dziecko z dwoma kategoriami
+  (100 + 200 = 300 limit) — wpłata 250 przechodzi, kolejna 100 (razem
+  350) odrzucona, wpłata dokładnie na granicy (300) przechodzi. Edycja:
+  ta sama kwota przechodzi, zwiększenie ponad limit odrzucone,
+  zmniejszenie przechodzi — potwierdza brak podwójnego liczenia.
+
 ### 2026-09-09 (8) — Wygląd raportów, znaczniki czasu, zakładka Raporty
 - Eksporty PDF/Excel dopasowane do redesignu: pasek marki, kolorowe
   nagłówki tabel, pasiaste wiersze, karta podsumowania (zebrano/plan/%,
