@@ -217,6 +217,28 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
   osobną nazwą projektu, z migracjami i seedem, dokładnie jak na
   serwerze produkcyjnym.
 
+### 2026-09-09 (3) — Konta rodziców i pełny backup JSON
+- Backend: CRUD kont rodziców (tworzenie z przypisaniem do dzieci,
+  edycja, ręczny reset hasła, usuwanie) — hasło nigdy nie opuszcza API
+  w odpowiedzi ani nie trafia do logu audytowego.
+- Backend: pełny eksport/import JSON. Świadoma decyzja bezpieczeństwa —
+  eksport NIE zawiera hashy haseł (nawet zahashowane hasło nie powinno
+  podróżować w pliku, który łatwo komuś przypadkiem przekazać); import
+  generuje nowe, tymczasowe hasła dla każdego konta i pokazuje je
+  administratorowi do ręcznego przekazania. Import niszczy bieżącą
+  sesję po zakończeniu (dane admina mogły się zmienić w trakcie
+  przywracania).
+- Frontend: `/users` (zarządzanie kontami rodziców z listą przypisanych
+  dzieci), sekcja "Kopia zapasowa" w ustawieniach (eksport = link do
+  pobrania, import = wybór pliku + potwierdzenie + wynik z tymczasowymi
+  hasłami).
+- Zweryfikowane end-to-end (Docker + prawdziwy MySQL, dwa razy —
+  punktowo przez curl i całościowo przez pełny `docker-compose`):
+  tworzenie konta rodzica, logowanie nim i potwierdzenie izolacji
+  (403 na `/api/users`, tylko własne dziecko), reset hasła unieważnia
+  stare hasło, usuwanie konta, oraz pełny cykl eksport → import
+  odtwarzający dokładnie te same dane z zachowanymi `id`.
+
 ## Następne kroki (checklist)
 - [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
 - [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
@@ -232,13 +254,13 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
       karta dziecka/zbiorczy).
 - [x] Frontend: zarządzanie kategoriami, wpłaty na ekranie dziecka,
       przełącznik widoku publicznego.
+- [x] Backend + frontend: zarządzanie kontami rodziców, pełny
+      eksport/import JSON.
 - [ ] **Do zrobienia przez użytkownika:** zweryfikować nowy UI w
-      przeglądarce (dodawanie kategorii, wpłat, przełącznik widoku
-      publicznego) po `git pull` + `docker compose up -d --build`.
-- [ ] Eksport raportów do PDF/Excel (dziś 501).
-- [ ] Import/eksport pełnego backupu JSON (dziś 501).
-- [ ] Zarządzanie kontami rodziców (dziś 501) — tworzenie kont, ręczny
-      reset hasła, przypisywanie do dzieci.
-- [ ] Ekrany frontendu dla raportów (zaległości, karta dziecka, zbiorczy)
-      i zarządzania kontami rodziców, gdy odpowiadający backend/UI-plan
-      dla nich powstanie.
+      przeglądarce (konta rodziców, eksport/import backupu — na
+      środowisku testowym, nie produkcyjnym, przy pierwszym imporcie!)
+      po `git pull` + `docker compose up -d --build`.
+- [ ] Eksport raportów do PDF/Excel (dziś 501 — jedyny pozostały stub
+      w całym API).
+- [ ] Ekrany frontendu dla raportów admina (zaległości, karta dziecka,
+      zbiorczy) — backend już gotowy (`/api/reports/*`), brakuje tylko UI.
