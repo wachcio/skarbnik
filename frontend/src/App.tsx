@@ -5,6 +5,7 @@ import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./pages/LoginPage";
 import { ChildrenListPage } from "./pages/ChildrenListPage";
 import { ChildDetailPage } from "./pages/ChildDetailPage";
+import { PaymentsPage } from "./pages/PaymentsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { ParentAccountsPage } from "./pages/ParentAccountsPage";
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="/" element={<Navigate to="/children" replace />} />
         <Route path="/children" element={<ChildrenListPage />} />
         <Route path="/children/:id" element={<ChildDetailPage />} />
+        <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/users" element={<ParentAccountsPage />} />

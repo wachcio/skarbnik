@@ -20,6 +20,9 @@ export function AppShell() {
         <NavLink to="/children" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
           Dzieci
         </NavLink>
+        <NavLink to="/payments" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
+          Wpłaty
+        </NavLink>
         <NavLink to="/settings" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
           Ustawienia
         </NavLink>
