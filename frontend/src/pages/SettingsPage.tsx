@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 import type { Settings } from "../lib/types";
+import { BackupSection } from "../components/BackupSection";
 
 export function SettingsPage() {
   const { user } = useAuth();
@@ -89,12 +90,22 @@ export function SettingsPage() {
               Zarządzaj kategoriami
             </Link>
           </div>
+
+          <div className="card stack-card">
+            <h2>Konta rodziców</h2>
+            <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+              Twórz konta, przypisuj do dzieci, resetuj hasła ręcznie.
+            </p>
+            <Link to="/users" className="btn btn-secondary">
+              Zarządzaj kontami
+            </Link>
+          </div>
+
+          <BackupSection />
         </>
       )}
 
-      <p className="muted footnote">
-        Raporty, konta rodziców i eksport/import danych — w kolejnym etapie prac.
-      </p>
+      <p className="muted footnote">Raporty — w kolejnym etapie prac.</p>
     </div>
   );
 }
