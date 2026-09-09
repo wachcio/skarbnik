@@ -239,6 +239,31 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
   stare hasło, usuwanie konta, oraz pełny cykl eksport → import
   odtwarzający dokładnie te same dane z zachowanymi `id`.
 
+### 2026-09-09 (4) — Ekran raportów, koniec głównej funkcjonalności
+- Frontend: `/reports` (admin) — zestawienie zbiorcze (jak widok
+  publiczny, ale z liczbą dzieci) i zaległości pogrupowane per dziecko,
+  z linkiem do karty dziecka. Link z ustawień.
+- Karta wpłat pojedynczego dziecka nie dostała osobnego ekranu — to
+  po prostu sekcja "Składki" na istniejącym ekranie dziecka
+  (`ChildPayments`), więc nie duplikujemy UI; endpoint
+  `/api/reports/child/:id` zostaje w API na przyszłość (np. pod eksport
+  PDF), ale bieżący frontend go nie woła osobno.
+- Build złapał realny błąd przed commitem: frontendowy typ
+  `CategorySummary` nie miał pola `archived`, które backend zaczął
+  zwracać wcześniej — naprawione.
+- Zweryfikowane na pełnym `docker-compose`. Przy okazji: migracja/seed
+  raz nie powiodła się przy pierwszym uruchomieniu w skrypcie testowym
+  (baza jeszcze nie była w pełni gotowa mimo statusu "healthy") —
+  zadziałało przy ponownej próbie; nie jest to związane ze zmianami
+  w kodzie, ale warto pamiętać, że `migrate deploy`/`seed` czasem trzeba
+  odpalić dwa razy tuż po `docker compose up`, jeśli pierwszy raz
+  zgłosi błąd "table does not exist".
+
+**Stan funkcjonalny:** cały zakres z pierwotnej specyfikacji działa
+(dzieci, logowanie, kategorie/kwoty, wpłaty, semestry, raporty, widok
+publiczny, konta rodziców, import/eksport JSON, motyw jasny/ciemny,
+mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
+
 ## Następne kroki (checklist)
 - [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
 - [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
@@ -253,14 +278,14 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
       ustawienia (przełącznik widoku publicznego), raporty (zaległości/
       karta dziecka/zbiorczy).
 - [x] Frontend: zarządzanie kategoriami, wpłaty na ekranie dziecka,
-      przełącznik widoku publicznego.
+      przełącznik widoku publicznego, ekran raportów.
 - [x] Backend + frontend: zarządzanie kontami rodziców, pełny
       eksport/import JSON.
 - [ ] **Do zrobienia przez użytkownika:** zweryfikować nowy UI w
-      przeglądarce (konta rodziców, eksport/import backupu — na
-      środowisku testowym, nie produkcyjnym, przy pierwszym imporcie!)
-      po `git pull` + `docker compose up -d --build`.
+      przeglądarce (raporty, konta rodziców, eksport/import backupu —
+      import na środowisku testowym, nie produkcyjnym!) po `git pull` +
+      `docker compose up -d --build`.
 - [ ] Eksport raportów do PDF/Excel (dziś 501 — jedyny pozostały stub
       w całym API).
-- [ ] Ekrany frontendu dla raportów admina (zaległości, karta dziecka,
-      zbiorczy) — backend już gotowy (`/api/reports/*`), brakuje tylko UI.
+- [ ] Nice-to-have na przyszłość: powiadomienia (e-mail/SMS) o
+      zaległościach — świadomie poza zakresem od początku projektu.
