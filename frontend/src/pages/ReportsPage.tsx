@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useSemesters } from "../hooks/useSemesters";
@@ -30,7 +30,6 @@ interface ArrearsRow {
 
 export function ReportsPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [summary, setSummary] = useState<SemesterSummary | null>(null);
   const [arrears, setArrears] = useState<ArrearsRow[] | null>(null);
@@ -67,10 +66,6 @@ export function ReportsPage() {
 
   return (
     <div>
-      <button type="button" className="link-back" onClick={() => navigate("/settings")}>
-        ‹ Wróć do ustawień
-      </button>
-
       <div className="page-header">
         <h1>Raporty</h1>
         <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />

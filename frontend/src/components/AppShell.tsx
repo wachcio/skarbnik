@@ -3,7 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function AppShell() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <div className="shell">
@@ -23,6 +24,11 @@ export function AppShell() {
         <NavLink to="/payments" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
           Wpłaty
         </NavLink>
+        {isAdmin && (
+          <NavLink to="/reports" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
+            Raporty
+          </NavLink>
+        )}
         <NavLink to="/settings" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
           Ustawienia
         </NavLink>

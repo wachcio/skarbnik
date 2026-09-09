@@ -60,16 +60,6 @@ export function SettingsPage() {
       {isAdmin && (
         <>
           <div className="card stack-card">
-            <h2>Raporty</h2>
-            <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-              Zestawienie zbiorcze grupy i lista zaległości wg dziecka.
-            </p>
-            <Link to="/reports" className="btn btn-secondary">
-              Zobacz raporty
-            </Link>
-          </div>
-
-          <div className="card stack-card">
             <h2>Widok publiczny</h2>
             <div className="tip-box" style={{ marginBottom: "0.85rem" }}>
               <span className="tip-icon">💡</span>
@@ -117,8 +107,6 @@ export function SettingsPage() {
           <BackupSection />
         </>
       )}
-
-      <p className="muted footnote">Raporty — w kolejnym etapie prac.</p>
     </div>
   );
 }
