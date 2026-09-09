@@ -171,6 +171,34 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
 - Commity od teraz pisane po angielsku (wcześniejsza historia przepisana
   z polskiego na angielski, treść plików bez zmian).
 
+### 2026-09-09 — Motyw ciemny na niebiesko/granat, prawdziwy frontend
+- Ciemny motyw przekolorowany z zielonego na granat + niebieski akcent;
+  jasny motyw też przeszedł z zieleni morskiej na niebieski, żeby oba
+  motywy były spójne. Po drodze naprawiony bug: zmiana kolorów objęła
+  tylko wariant `@media (prefers-color-scheme)`, nie ręcznie wybierany
+  `[data-theme="dark"]` — inne wcięcie w CSS sprawiło, że find-and-replace
+  trafił tylko w jedno miejsce. Oba warianty są teraz identyczne.
+- Frontend przestał być pojedynczym ekranem-placeholderem:
+  - `react-router-dom` + `AuthContext`/`useAuth` zamiast stanu logowania
+    trzymanego ręcznie w `App.tsx`.
+  - `AppShell`: sticky nagłówek + dolny pasek nawigacji (Dzieci /
+    Ustawienia / Wyloguj) — wzorzec mobile-first.
+  - Dzieci: lista (rodzic widzi tylko swoje, admin wszystkie + może
+    dodawać), ekran szczegółów z edycją, usuwanie z potwierdzeniem
+    (bottom-sheet). W pełni podpięte pod istniejące API.
+  - Ustawienia: na razie dane konta + zapowiedź reszty.
+  - Strona publiczna `/public` (bez logowania): zebrano/planowano +
+    rozbicie na kategorie z paskami postępu, korzysta z
+    `/api/public/summary`.
+  - `theme.css` rozbudowany o system komponentów (karty, listy,
+    formularze, przyciski, modal, paski postępu) na tych samych tokenach
+    kolorów.
+- Zweryfikowane: `tsc --noEmit`, `vite build`, oraz prawdziwy build
+  obrazu Dockera z testem SPA-fallbacku przez curl (`/children`,
+  `/children/:id` poprawnie serwują `index.html`, nie 404). Nie
+  przetestowane: rzeczywiste renderowanie w przeglądarce — brak
+  przeglądarki headless w tym środowisku.
+
 ## Następne kroki (checklist)
 - [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
 - [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
@@ -178,9 +206,16 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
       `docker-compose.yml`.
 - [x] Pełny test end-to-end z prawdziwym MySQL i działającym deploymentem
       za NGINX Proxy Managerem (dom).
+- [x] Frontend: routing, uwierzytelnianie, pełny ekran dzieci (lista +
+      szczegóły + edycja + usuwanie), strona publiczna, dolna nawigacja
+      mobile-first.
+- [ ] **Do zrobienia przez użytkownika:** zweryfikować nowy UI w
+      przeglądarce (na telefonie i desktopie, oba motywy) po
+      `git pull` + `docker compose up -d --build frontend`.
 - [ ] Implementacja pozostałych modułów backendu: kategorie/kwoty, wpłaty,
-      ustawienia, raporty (zaległości/karta dziecka/zbiorczy + eksport),
-      import/eksport JSON, zarządzanie kontami rodziców.
-- [ ] Makiety / ekrany mobile-first: lista i karta dziecka, wpłaty,
-      raporty, panel ustawień.
-- [ ] Frontend: pełne ekrany po zalogowaniu (obecnie tylko placeholder).
+      ustawienia (w tym przełącznik widoku publicznego), raporty
+      (zaległości/karta dziecka/zbiorczy + eksport), import/eksport JSON,
+      zarządzanie kontami rodziców.
+- [ ] Odpowiadające im ekrany frontendu, gdy backend będzie gotowy:
+      kategorie i kwoty, wpłaty (z historią częściowych), raporty, pełny
+      panel ustawień.
