@@ -572,6 +572,19 @@ textarea.input {
   height: 1.1rem;
 }
 
+.export-links {
+  display: flex;
+  gap: 0.9rem;
+  font-size: 0.85rem;
+}
+
+.export-links a {
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+}
+
 .arrears-child-link {
   text-decoration: none;
   color: var(--ink);

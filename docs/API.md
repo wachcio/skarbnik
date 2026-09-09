@@ -79,7 +79,7 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 | GET | `/api/reports/arrears?semesterId=` | Admin | Zestawienie zaległości wg dziecka/kategorii. | ✅ |
 | GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy (reużywa `services/reports.service.ts`). | ✅ |
 | GET | `/api/reports/child/:id?semesterId=` | Admin | Karta wpłat pojedynczego dziecka. | ✅ |
-| GET | `/api/reports/export?report=&format=pdf\|xlsx` | Admin | Eksport raportu do pliku. | 🚧 |
+| GET | `/api/reports/export?report=summary\|arrears&format=pdf\|xlsx&semesterId=` | Admin | Eksport zestawienia zbiorczego lub zaległości do pliku (PDF z osadzonym fontem PT Sans dla polskich znaków, albo XLSX). | ✅ |
 
 ## Import / eksport
 

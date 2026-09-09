@@ -4,7 +4,7 @@ import { requireRole } from "../middleware/auth";
 import { asyncHandler } from "../lib/asyncHandler";
 import { getSemesterSummary, getArrears } from "../services/reports.service";
 import { getChildLedger } from "../services/childLedger.service";
-import { notImplemented } from "./notImplemented";
+import { sendSummaryPdf, sendSummaryXlsx, sendArrearsPdf, sendArrearsXlsx } from "../services/export.service";
 
 export const reportsRouter = Router();
 reportsRouter.use(requireRole("ADMIN"));
@@ -46,4 +46,32 @@ reportsRouter.get(
   })
 );
 
-reportsRouter.get("/export", notImplemented("Eksport raportu do PDF/Excel"));
+reportsRouter.get(
+  "/export",
+  asyncHandler(async (req, res) => {
+    const semesterId = requireSemesterId(req);
+    if (!semesterId) return res.status(400).json({ error: "Podaj semesterId." });
+
+    const report = req.query.report;
+    const format = req.query.format;
+    if (report !== "summary" && report !== "arrears") {
+      return res.status(400).json({ error: "Nieprawidłowy parametr report — dozwolone: summary, arrears." });
+    }
+    if (format !== "xlsx" && format !== "pdf") {
+      return res.status(400).json({ error: "Nieprawidłowy parametr format — dozwolone: xlsx, pdf." });
+    }
+
+    const semester = await prisma.semester.findUnique({ where: { id: semesterId } });
+    if (!semester) return res.status(404).json({ error: "Nie znaleziono semestru." });
+
+    if (report === "summary") {
+      const summary = await getSemesterSummary(semesterId);
+      if (format === "xlsx") return sendSummaryXlsx(res, summary, semester.label);
+      return sendSummaryPdf(res, summary, semester.label);
+    }
+
+    const arrears = await getArrears(semesterId);
+    if (format === "xlsx") return sendArrearsXlsx(res, arrears, semester.label);
+    return sendArrearsPdf(res, arrears, semester.label);
+  })
+);

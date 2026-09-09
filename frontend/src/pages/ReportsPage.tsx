@@ -8,6 +8,15 @@ import type { CategorySummary, SemesterSummary } from "../lib/types";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 
+function ExportLinks({ report, semesterId }: { report: "summary" | "arrears"; semesterId: string }) {
+  return (
+    <div className="export-links">
+      <a href={`/api/reports/export?report=${report}&format=pdf&semesterId=${semesterId}`}>PDF</a>
+      <a href={`/api/reports/export?report=${report}&format=xlsx&semesterId=${semesterId}`}>Excel</a>
+    </div>
+  );
+}
+
 interface ArrearsRow {
   childId: string;
   childName: string;
@@ -69,7 +78,10 @@ export function ReportsPage() {
       {error && <p className="error-text">{error}</p>}
 
       <div className="card">
-        <h2>Zestawienie zbiorcze</h2>
+        <div className="page-header" style={{ marginBottom: "0.6rem" }}>
+          <h2 style={{ marginBottom: 0 }}>Zestawienie zbiorcze</h2>
+          <ExportLinks report="summary" semesterId={selectedId} />
+        </div>
         {!summary && !error && <p className="muted">Wczytywanie…</p>}
         {summary && (
           <>
@@ -119,7 +131,10 @@ export function ReportsPage() {
       </div>
 
       <div className="card stack-card">
-        <h2>Zaległości</h2>
+        <div className="page-header" style={{ marginBottom: "0.6rem" }}>
+          <h2 style={{ marginBottom: 0 }}>Zaległości</h2>
+          <ExportLinks report="arrears" semesterId={selectedId} />
+        </div>
         {!arrears && !error && <p className="muted">Wczytywanie…</p>}
         {arrears?.length === 0 && <p className="muted">Brak zaległości w tym semestrze — wszystko opłacone.</p>}
 
