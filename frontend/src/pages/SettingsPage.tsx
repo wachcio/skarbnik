@@ -60,6 +60,16 @@ export function SettingsPage() {
       {isAdmin && (
         <>
           <div className="card stack-card">
+            <h2>Raporty</h2>
+            <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+              Zestawienie zbiorcze grupy i lista zaległości wg dziecka.
+            </p>
+            <Link to="/reports" className="btn btn-secondary">
+              Zobacz raporty
+            </Link>
+          </div>
+
+          <div className="card stack-card">
             <h2>Widok publiczny</h2>
             <p className="muted footnote-tight" style={{ marginTop: 0 }}>
               Strona bez logowania z zagregowanymi danymi grupy (zebrano/planowano), dostępna pod{" "}

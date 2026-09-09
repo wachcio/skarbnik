@@ -8,6 +8,7 @@ import { ChildDetailPage } from "./pages/ChildDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { ParentAccountsPage } from "./pages/ParentAccountsPage";
+import { ReportsPage } from "./pages/ReportsPage";
 import { PublicSummaryPage } from "./pages/PublicSummaryPage";
 
 function RequireAuth({ children }: { children: ReactElement }) {
@@ -49,6 +50,7 @@ function AppRoutes() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/users" element={<ParentAccountsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

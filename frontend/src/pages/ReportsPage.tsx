@@ -1,0 +1,146 @@
+import { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { apiFetch } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { useSemesters } from "../hooks/useSemesters";
+import { SemesterSelect } from "../components/SemesterSelect";
+import type { CategorySummary, SemesterSummary } from "../lib/types";
+
+const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
+
+interface ArrearsRow {
+  childId: string;
+  childName: string;
+  categoryId: string;
+  categoryName: string;
+  target: number;
+  paid: number;
+  remaining: number;
+}
+
+export function ReportsPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { semesters, selectedId, setSelectedId } = useSemesters();
+  const [summary, setSummary] = useState<SemesterSummary | null>(null);
+  const [arrears, setArrears] = useState<ArrearsRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    setSummary(null);
+    setArrears(null);
+    Promise.all([
+      apiFetch(`/reports/summary?semesterId=${selectedId}`),
+      apiFetch(`/reports/arrears?semesterId=${selectedId}`),
+    ]).then(async ([summaryRes, arrearsRes]) => {
+      if (summaryRes.ok) setSummary(await summaryRes.json());
+      if (arrearsRes.ok) setArrears(await arrearsRes.json());
+      if (!summaryRes.ok || !arrearsRes.ok) setError("Nie udało się pobrać raportów.");
+    });
+  }, [selectedId]);
+
+  if (user?.role !== "ADMIN") return <Navigate to="/settings" replace />;
+  if (!semesters || !selectedId) return <p className="muted">Wczytywanie…</p>;
+
+  const percent =
+    summary && summary.targetTotal > 0
+      ? Math.min(100, Math.round((summary.collectedTotal / summary.targetTotal) * 100))
+      : 0;
+
+  const arrearsByChild = new Map<string, { childName: string; rows: ArrearsRow[] }>();
+  for (const row of arrears ?? []) {
+    const entry = arrearsByChild.get(row.childId) ?? { childName: row.childName, rows: [] };
+    entry.rows.push(row);
+    arrearsByChild.set(row.childId, entry);
+  }
+
+  return (
+    <div>
+      <button type="button" className="link-back" onClick={() => navigate("/settings")}>
+        ‹ Wróć do ustawień
+      </button>
+
+      <div className="page-header">
+        <h1>Raporty</h1>
+        <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
+      </div>
+
+      {error && <p className="error-text">{error}</p>}
+
+      <div className="card">
+        <h2>Zestawienie zbiorcze</h2>
+        {!summary && !error && <p className="muted">Wczytywanie…</p>}
+        {summary && (
+          <>
+            <div className="stat-row">
+              <div>
+                <span className="stat-value">{currency.format(summary.collectedTotal)}</span>
+                <span className="stat-label">zebrano</span>
+              </div>
+              <div>
+                <span className="stat-value">{currency.format(summary.targetTotal)}</span>
+                <span className="stat-label">planowane</span>
+              </div>
+              <div>
+                <span className="stat-value">{summary.childCount}</span>
+                <span className="stat-label">dzieci w grupie</span>
+              </div>
+            </div>
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${percent}%` }} />
+            </div>
+
+            {summary.byCategory.length > 0 && (
+              <ul className="category-breakdown stack-card">
+                {summary.byCategory.map((category: CategorySummary) => {
+                  const catPercent = category.target > 0 ? Math.min(100, Math.round((category.collected / category.target) * 100)) : 0;
+                  return (
+                    <li key={category.categoryId}>
+                      <div className="category-row-header">
+                        <span>
+                          {category.name}
+                          {category.archived && <span className="badge-archived"> (zarchiwizowana)</span>}
+                        </span>
+                        <span className="muted">
+                          {currency.format(category.collected)} / {currency.format(category.target)}
+                        </span>
+                      </div>
+                      <div className="progress-track small">
+                        <div className="progress-fill" style={{ width: `${catPercent}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="card stack-card">
+        <h2>Zaległości</h2>
+        {!arrears && !error && <p className="muted">Wczytywanie…</p>}
+        {arrears?.length === 0 && <p className="muted">Brak zaległości w tym semestrze — wszystko opłacone.</p>}
+
+        <ul className="list">
+          {Array.from(arrearsByChild.entries()).map(([childId, entry]) => (
+            <li key={childId} className="card category-item">
+              <Link to={`/children/${childId}`} className="arrears-child-link">
+                <strong>{entry.childName}</strong>
+              </Link>
+              <ul className="payment-list">
+                {entry.rows.map((row) => (
+                  <li key={row.categoryId} className="payment-row">
+                    <span>{row.categoryName}</span>
+                    <span className="amount-remaining">brakuje {currency.format(row.remaining)}</span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}

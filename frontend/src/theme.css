@@ -572,6 +572,15 @@ textarea.input {
   height: 1.1rem;
 }
 
+.arrears-child-link {
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.arrears-child-link:hover strong {
+  color: var(--accent);
+}
+
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   background: var(--surface-alt);

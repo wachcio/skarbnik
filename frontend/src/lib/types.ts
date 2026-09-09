@@ -63,6 +63,7 @@ export interface Settings {
 export interface CategorySummary {
   categoryId: string;
   name: string;
+  archived: boolean;
   target: number;
   collected: number;
 }
