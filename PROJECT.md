@@ -311,3 +311,18 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 - [ ] Nice-to-have na przyszłość (świadomie poza zakresem od początku):
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
+
+### 2026-09-09 (6) — Zakładka "Wpłaty" (odnajdywalność)
+- Realny feedback: funkcja dodawania wpłat istniała i działała (na
+  karcie dziecka), ale nikt by tam nie trafił bez podpowiedzi — brak
+  osobnej pozycji w menu. Dodana zakładka "Wpłaty" w dolnej nawigacji
+  (między Dzieci a Ustawienia): globalna lista wpłat w danym semestrze
+  (admin: wszystkie, z linkiem do dziecka; rodzic: tylko swojego
+  dziecka — ten sam filtr co reszta API) + formularz dodawania, który
+  zaczyna się od wyboru dziecka (inaczej niż na karcie dziecka, gdzie
+  dziecko jest już ustalone). Karta dziecka (`ChildPayments`) zostaje
+  bez zmian — to dodatek, nie zamiennik.
+- Przy okazji zweryfikowane realnie: `GET /api/payments` serializuje
+  kwoty (Decimal) jako stringi w JSON, nie liczby — frontend już to
+  poprawnie obsługiwał przez `Number(...)`, potwierdzone na żywym
+  przykładzie z kwotą ułamkową (123,45 zł).
