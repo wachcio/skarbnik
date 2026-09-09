@@ -28,9 +28,17 @@ export interface CategoryLedgerRow {
  * (patrz PROJECT.md: "historia zostaje widoczna w raportach"). Dopiero
  * na końcu odsiewamy zarchiwizowane kategorie, które nigdy nie miały tu
  * żadnej kwoty ani wpłaty — żeby nie zaśmiecały widoku.
+ *
+ * `excludePaymentId` pomija jedną wpłatę przy liczeniu sum — używane przy
+ * edycji wpłaty, żeby nie liczyć jej starej kwoty podwójnie (patrz
+ * getChildSemesterTotals).
  */
-export async function getChildLedger(childId: string, semesterId: string): Promise<CategoryLedgerRow[]> {
-  const [categories, overrides, payments] = await Promise.all([
+export async function getChildLedger(
+  childId: string,
+  semesterId: string,
+  options: { excludePaymentId?: string } = {}
+): Promise<CategoryLedgerRow[]> {
+  const [categories, overrides, allPayments] = await Promise.all([
     prisma.category.findMany({
       include: { targets: { where: { semesterId } } },
       orderBy: { name: "asc" },
@@ -38,6 +46,10 @@ export async function getChildLedger(childId: string, semesterId: string): Promi
     prisma.childCategoryAmount.findMany({ where: { childId, semesterId } }),
     prisma.payment.findMany({ where: { childId, semesterId }, orderBy: { paidAt: "desc" } }),
   ]);
+
+  const payments = options.excludePaymentId
+    ? allPayments.filter((p) => p.id !== options.excludePaymentId)
+    : allPayments;
 
   return categories
     .map((category) => {
@@ -62,4 +74,27 @@ export async function getChildLedger(childId: string, semesterId: string): Promi
       };
     })
     .filter((row) => !row.archived || row.target > 0 || row.paid > 0);
+}
+
+export interface ChildSemesterTotals {
+  targetTotal: number;
+  paidTotal: number;
+}
+
+/**
+ * Suma kwot docelowych i suma dotychczasowych wpłat dla dziecka w danym
+ * semestrze, po wszystkich kategoriach razem — używane do pilnowania, żeby
+ * łączna kwota wpłat na dziecko nie przewyższyła sumy wszystkich kategorii
+ * (patrz PROJECT.md, zabezpieczenie w routes/payments.routes.ts).
+ */
+export async function getChildSemesterTotals(
+  childId: string,
+  semesterId: string,
+  options: { excludePaymentId?: string } = {}
+): Promise<ChildSemesterTotals> {
+  const ledger = await getChildLedger(childId, semesterId, options);
+  return {
+    targetTotal: ledger.reduce((sum, row) => sum + row.target, 0),
+    paidTotal: ledger.reduce((sum, row) => sum + row.paid, 0),
+  };
 }

@@ -4,9 +4,35 @@ import { prisma } from "../lib/prisma";
 import { requireAuth, requireRole, sessionLabel } from "../middleware/auth";
 import { asyncHandler } from "../lib/asyncHandler";
 import { recordAudit } from "../services/auditLog.service";
+import { getChildSemesterTotals } from "../services/childLedger.service";
 
 export const paymentsRouter = Router();
 paymentsRouter.use(requireAuth);
+
+const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
+
+/**
+ * Zabezpieczenie: suma wpłat dziecka w semestrze (po wszystkich
+ * kategoriach razem) nie może przewyższyć sumy kwot docelowych
+ * wszystkich kategorii dla tego dziecka w tym semestrze. `excludePaymentId`
+ * pomija samą edytowaną wpłatę, żeby nie liczyć jej starej kwoty podwójnie.
+ */
+async function assertWithinChildSemesterBudget(
+  childId: string,
+  semesterId: string,
+  amountToAdd: number,
+  excludePaymentId?: string
+): Promise<string | null> {
+  const totals = await getChildSemesterTotals(childId, semesterId, { excludePaymentId });
+  const newTotal = totals.paidTotal + amountToAdd;
+  if (newTotal > totals.targetTotal) {
+    return (
+      `Łączna kwota wpłat tego dziecka w tym semestrze (${currency.format(newTotal)}) ` +
+      `przekroczyłaby sumę kwot docelowych wszystkich kategorii (${currency.format(totals.targetTotal)}).`
+    );
+  }
+  return null;
+}
 
 const paymentSchema = z.object({
   childId: z.string().min(1),
@@ -72,6 +98,9 @@ paymentsRouter.post(
     if (category.archived) return res.status(400).json({ error: "Kategoria jest zarchiwizowana." });
     if (!semester) return res.status(400).json({ error: "Nie znaleziono semestru." });
 
+    const budgetError = await assertWithinChildSemesterBudget(childId, semesterId, parsed.data.amount);
+    if (budgetError) return res.status(400).json({ error: budgetError });
+
     const payment = await prisma.payment.create({
       data: { ...parsed.data, createdById: req.session.userId },
     });
@@ -100,6 +129,21 @@ paymentsRouter.patch(
 
     const before = await prisma.payment.findUnique({ where: { id: req.params.id } });
     if (!before) return res.status(404).json({ error: "Nie znaleziono wpłaty." });
+
+    // Efektywny stan po scaleniu z częściową zmianą — walidacja budżetu
+    // musi patrzeć na to, co faktycznie będzie zapisane, nie na same
+    // przesłane pola (PATCH jest częściowy).
+    const effectiveChildId = parsed.data.childId ?? before.childId;
+    const effectiveSemesterId = parsed.data.semesterId ?? before.semesterId;
+    const effectiveAmount = parsed.data.amount ?? Number(before.amount);
+
+    const budgetError = await assertWithinChildSemesterBudget(
+      effectiveChildId,
+      effectiveSemesterId,
+      effectiveAmount,
+      before.id
+    );
+    if (budgetError) return res.status(400).json({ error: budgetError });
 
     const after = await prisma.payment.update({ where: { id: req.params.id }, data: parsed.data });
 
