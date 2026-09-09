@@ -22,6 +22,7 @@ export function ParentAccountsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   async function load() {
     const [accountsRes, childrenRes] = await Promise.all([apiFetch("/users"), apiFetch("/children")]);
@@ -87,6 +88,13 @@ export function ParentAccountsPage() {
                 </div>
               </div>
               <div className="button-group">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-small"
+                  onClick={() => setEditingId(editingId === account.id ? null : account.id)}
+                >
+                  {editingId === account.id ? "Anuluj" : "Edytuj"}
+                </button>
                 <button type="button" className="btn btn-secondary btn-small" onClick={() => setResettingId(account.id)}>
                   Reset hasła
                 </button>
@@ -95,11 +103,23 @@ export function ParentAccountsPage() {
                 </button>
               </div>
             </div>
-            <p className="muted footnote-tight" style={{ marginTop: 0 }}>
-              {account.children.length > 0
-                ? `Dzieci: ${account.children.map((c) => `${c.firstName} ${c.lastName}`).join(", ")}`
-                : "Brak przypisanych dzieci."}
-            </p>
+
+            {editingId === account.id && children ? (
+              <EditAccountForm
+                account={account}
+                children={children}
+                onDone={async () => {
+                  setEditingId(null);
+                  await load();
+                }}
+              />
+            ) : (
+              <p className="muted footnote-tight" style={{ marginTop: 0 }}>
+                {account.children.length > 0
+                  ? `Dzieci: ${account.children.map((c) => `${c.firstName} ${c.lastName}`).join(", ")}`
+                  : "Brak przypisanych dzieci."}
+              </p>
+            )}
           </li>
         ))}
       </ul>
@@ -203,6 +223,70 @@ function AddAccountForm({ children, onDone }: AddAccountFormProps) {
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
           {submitting ? "Tworzenie…" : "Utwórz konto"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+interface EditAccountFormProps {
+  account: ParentAccount;
+  children: Child[];
+  onDone: () => Promise<void>;
+}
+
+function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
+  const [displayName, setDisplayName] = useState(account.displayName);
+  const [childIds, setChildIds] = useState<string[]>(account.children.map((c) => c.id));
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  function toggleChild(id: string) {
+    setChildIds((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await apiFetch(`/users/${account.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ displayName, childIds }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Nie udało się zapisać zmian.");
+      }
+      await onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="form" style={{ marginTop: "0.75rem" }}>
+      <label className="field">
+        Imię i nazwisko rodzica
+        <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+      </label>
+      <div className="field">
+        Dzieci
+        <div className="checkbox-list">
+          {children.map((child) => (
+            <label key={child.id} className="checkbox-row">
+              <input type="checkbox" checked={childIds.includes(child.id)} onChange={() => toggleChild(child.id)} />
+              {child.firstName} {child.lastName}
+            </label>
+          ))}
+        </div>
+      </div>
+      {error && <p className="error-text">{error}</p>}
+      <div className="form-actions">
+        <button type="submit" className="btn" disabled={submitting}>
+          {submitting ? "Zapisywanie…" : "Zapisz zmiany"}
         </button>
       </div>
     </form>

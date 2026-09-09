@@ -20,6 +20,9 @@ export function CategoriesPage() {
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [amountDrafts, setAmountDrafts] = useState<Record<string, string>>({});
   const [savingAmountFor, setSavingAmountFor] = useState<string | null>(null);
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   async function load() {
     const res = await apiFetch("/categories");
@@ -57,6 +60,33 @@ export function CategoriesPage() {
       setError(err instanceof Error ? err.message : "Wystąpił błąd.");
     } finally {
       setCreating(false);
+    }
+  }
+
+  function startEditingName(category: Category) {
+    setEditingNameId(category.id);
+    setNameDraft(category.name);
+    setError(null);
+  }
+
+  async function handleSaveName(id: string) {
+    setSavingName(true);
+    setError(null);
+    try {
+      const res = await apiFetch(`/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: nameDraft }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Nie udało się zapisać nazwy.");
+      }
+      setEditingNameId(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+    } finally {
+      setSavingName(false);
     }
   }
 
@@ -137,14 +167,52 @@ export function CategoriesPage() {
         {categories?.map((category) => (
           <li key={category.id} className="card category-item">
             <div className="category-item-header">
-              <strong>{category.name}</strong>
-              <button
-                type="button"
-                className="btn btn-danger btn-small"
-                onClick={() => setArchivingId(category.id)}
-              >
-                Archiwizuj
-              </button>
+              {editingNameId === category.id ? (
+                <div className="amount-row" style={{ flex: "1 1 220px" }}>
+                  <input
+                    className="input"
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-small"
+                    disabled={savingName}
+                    onClick={() => handleSaveName(category.id)}
+                  >
+                    Zapisz
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-small"
+                    disabled={savingName}
+                    onClick={() => setEditingNameId(null)}
+                  >
+                    Anuluj
+                  </button>
+                </div>
+              ) : (
+                <strong>{category.name}</strong>
+              )}
+              <div className="button-group">
+                {editingNameId !== category.id && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-small"
+                    onClick={() => startEditingName(category)}
+                  >
+                    Zmień nazwę
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-danger btn-small"
+                  onClick={() => setArchivingId(category.id)}
+                >
+                  Archiwizuj
+                </button>
+              </div>
             </div>
             <label className="field">
               Kwota domyślna na {semesters?.find((s) => s.id === selectedId)?.label ?? "wybrany semestr"}
