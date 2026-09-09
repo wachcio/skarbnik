@@ -83,7 +83,11 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
                 {row.categoryName}
                 {row.archived && <span className="badge-archived"> (zarchiwizowana)</span>}
               </strong>
-              <span className={row.remaining > 0 ? "amount-remaining" : "amount-paid"}>
+              <span
+                className={
+                  row.target === 0 ? "status-pill neutral" : row.remaining > 0 ? "status-pill danger" : "status-pill success"
+                }
+              >
                 {currency.format(row.paid)} / {currency.format(row.target)}
               </span>
             </div>

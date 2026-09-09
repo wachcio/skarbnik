@@ -4,6 +4,7 @@ import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "../components/SemesterSelect";
+import { DonutChart } from "../components/DonutChart";
 import type { CategorySummary, SemesterSummary } from "../lib/types";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
@@ -85,28 +86,31 @@ export function ReportsPage() {
         {!summary && !error && <p className="muted">Wczytywanie…</p>}
         {summary && (
           <>
-            <div className="stat-row">
-              <div>
-                <span className="stat-value">{currency.format(summary.collectedTotal)}</span>
-                <span className="stat-label">zebrano</span>
+            <div className="donut-wrap">
+              <DonutChart percent={percent} caption="zebrane" color={percent >= 100 ? "var(--success)" : "var(--accent)"} />
+              <div className="donut-legend">
+                <div className="donut-legend-row">
+                  <span className="muted">Zebrano</span>
+                  <span className="value">{currency.format(summary.collectedTotal)}</span>
+                </div>
+                <div className="donut-legend-row">
+                  <span className="muted">Planowane</span>
+                  <span className="value">{currency.format(summary.targetTotal)}</span>
+                </div>
+                <div className="donut-legend-row">
+                  <span className="muted">Dzieci w grupie</span>
+                  <span className="value">{summary.childCount}</span>
+                </div>
               </div>
-              <div>
-                <span className="stat-value">{currency.format(summary.targetTotal)}</span>
-                <span className="stat-label">planowane</span>
-              </div>
-              <div>
-                <span className="stat-value">{summary.childCount}</span>
-                <span className="stat-label">dzieci w grupie</span>
-              </div>
-            </div>
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${percent}%` }} />
             </div>
 
             {summary.byCategory.length > 0 && (
               <ul className="category-breakdown stack-card">
                 {summary.byCategory.map((category: CategorySummary) => {
-                  const catPercent = category.target > 0 ? Math.min(100, Math.round((category.collected / category.target) * 100)) : 0;
+                  const hasTarget = category.target > 0;
+                  const catPercent = hasTarget ? Math.min(100, Math.round((category.collected / category.target) * 100)) : 0;
+                  const done = hasTarget && catPercent >= 100;
+                  const pillClass = !hasTarget ? "status-pill neutral" : done ? "status-pill success" : "status-pill danger";
                   return (
                     <li key={category.categoryId}>
                       <div className="category-row-header">
@@ -114,12 +118,12 @@ export function ReportsPage() {
                           {category.name}
                           {category.archived && <span className="badge-archived"> (zarchiwizowana)</span>}
                         </span>
-                        <span className="muted">
+                        <span className={pillClass}>
                           {currency.format(category.collected)} / {currency.format(category.target)}
                         </span>
                       </div>
                       <div className="progress-track small">
-                        <div className="progress-fill" style={{ width: `${catPercent}%` }} />
+                        <div className={done ? "progress-fill success" : "progress-fill"} style={{ width: `${catPercent}%` }} />
                       </div>
                     </li>
                   );
@@ -148,7 +152,7 @@ export function ReportsPage() {
                 {entry.rows.map((row) => (
                   <li key={row.categoryId} className="payment-row">
                     <span>{row.categoryName}</span>
-                    <span className="amount-remaining">brakuje {currency.format(row.remaining)}</span>
+                    <span className="status-pill danger">brakuje {currency.format(row.remaining)}</span>
                   </li>
                 ))}
               </ul>

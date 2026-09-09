@@ -71,10 +71,13 @@ export function SettingsPage() {
 
           <div className="card stack-card">
             <h2>Widok publiczny</h2>
-            <p className="muted footnote-tight" style={{ marginTop: 0 }}>
-              Strona bez logowania z zagregowanymi danymi grupy (zebrano/planowano), dostępna pod{" "}
-              <Link to="/public">/public</Link>. Bez żadnych danych osobowych dzieci.
-            </p>
+            <div className="tip-box" style={{ marginBottom: "0.85rem" }}>
+              <span className="tip-icon">💡</span>
+              <span>
+                Strona bez logowania z zagregowanymi danymi grupy (zebrano/planowano), dostępna pod{" "}
+                <Link to="/public">/public</Link>. Bez żadnych danych osobowych dzieci.
+              </span>
+            </div>
             {error && <p className="error-text">{error}</p>}
             {settings ? (
               <label className="toggle-row">
