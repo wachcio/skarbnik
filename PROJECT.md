@@ -199,6 +199,24 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
   przetestowane: rzeczywiste renderowanie w przeglądarce — brak
   przeglądarki headless w tym środowisku.
 
+### 2026-09-09 (2) — Kategorie, wpłaty, ustawienia i raporty (backend + UI)
+- Backend: pełny CRUD kategorii (soft delete), kwoty domyślne per
+  semestr, nadpisania kwot per dziecko, pełny CRUD wpłat (rola-aware),
+  ustawienia (GET/PATCH), raporty zaległości/zbiorczy/karta dziecka.
+  PDF/Excel eksport nadal jako 501 — zaplanowany na później.
+- Bug znaleziony i naprawiony przez prawdziwy test (Docker + MySQL):
+  archiwizacja kategorii usuwała jej historię wpłat z ledgeru/raportów/
+  widoku publicznego (filtr `archived: false` na poziomie zapytania).
+  Naprawione — historia zostaje, filtrowane są tylko zarchiwizowane
+  kategorie bez żadnej historii.
+- Frontend: strona zarządzania kategoriami (`/categories`, admin),
+  sekcja wpłat na ekranie dziecka (rozliczenie per kategoria + dodawanie/
+  usuwanie wpłat), przełącznik widoku publicznego w ustawieniach.
+- Zweryfikowane dwa razy: raz punktowo (każdy endpoint z curl), raz
+  całościowo — pełny `docker-compose` (mysql+backend+frontend) pod
+  osobną nazwą projektu, z migracjami i seedem, dokładnie jak na
+  serwerze produkcyjnym.
+
 ## Następne kroki (checklist)
 - [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
 - [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
@@ -206,16 +224,21 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
       `docker-compose.yml`.
 - [x] Pełny test end-to-end z prawdziwym MySQL i działającym deploymentem
       za NGINX Proxy Managerem (dom).
-- [x] Frontend: routing, uwierzytelnianie, pełny ekran dzieci (lista +
+- [x] Frontend: routing, uwierzytelnianie, ekran dzieci (lista +
       szczegóły + edycja + usuwanie), strona publiczna, dolna nawigacja
       mobile-first.
+- [x] Backend: kategorie/kwoty (w tym nadpisania per dziecko), wpłaty,
+      ustawienia (przełącznik widoku publicznego), raporty (zaległości/
+      karta dziecka/zbiorczy).
+- [x] Frontend: zarządzanie kategoriami, wpłaty na ekranie dziecka,
+      przełącznik widoku publicznego.
 - [ ] **Do zrobienia przez użytkownika:** zweryfikować nowy UI w
-      przeglądarce (na telefonie i desktopie, oba motywy) po
-      `git pull` + `docker compose up -d --build frontend`.
-- [ ] Implementacja pozostałych modułów backendu: kategorie/kwoty, wpłaty,
-      ustawienia (w tym przełącznik widoku publicznego), raporty
-      (zaległości/karta dziecka/zbiorczy + eksport), import/eksport JSON,
-      zarządzanie kontami rodziców.
-- [ ] Odpowiadające im ekrany frontendu, gdy backend będzie gotowy:
-      kategorie i kwoty, wpłaty (z historią częściowych), raporty, pełny
-      panel ustawień.
+      przeglądarce (dodawanie kategorii, wpłat, przełącznik widoku
+      publicznego) po `git pull` + `docker compose up -d --build`.
+- [ ] Eksport raportów do PDF/Excel (dziś 501).
+- [ ] Import/eksport pełnego backupu JSON (dziś 501).
+- [ ] Zarządzanie kontami rodziców (dziś 501) — tworzenie kont, ręczny
+      reset hasła, przypisywanie do dzieci.
+- [ ] Ekrany frontendu dla raportów (zaległości, karta dziecka, zbiorczy)
+      i zarządzania kontami rodziców, gdy odpowiadający backend/UI-plan
+      dla nich powstanie.
