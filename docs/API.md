@@ -20,11 +20,11 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/users` | Admin | Lista kont rodziców. | 🚧 |
-| POST | `/api/users` | Admin | Utworzenie konta rodzica + powiązanie z dzieckiem/dziećmi. | 🚧 |
-| PATCH | `/api/users/:id` | Admin | Edycja konta / przypisań do dzieci. | 🚧 |
-| POST | `/api/users/:id/reset-password` | Admin | Ręczny reset hasła (bez e-maila — patrz PROJECT.md). | 🚧 |
-| DELETE | `/api/users/:id` | Admin | Usunięcie konta. | 🚧 |
+| GET | `/api/users` | Admin | Lista kont rodziców. | ✅ |
+| POST | `/api/users` | Admin | Utworzenie konta rodzica + powiązanie z dzieckiem/dziećmi. | ✅ |
+| PATCH | `/api/users/:id` | Admin | Edycja konta / przypisań do dzieci. | ✅ |
+| POST | `/api/users/:id/reset-password` | Admin | Ręczny reset hasła (bez e-maila — patrz PROJECT.md). | ✅ |
+| DELETE | `/api/users/:id` | Admin | Usunięcie konta. | ✅ |
 
 ## Dzieci
 
@@ -35,6 +35,7 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 | POST | `/api/children` | Admin | Dodanie dziecka. | ✅ |
 | PATCH | `/api/children/:id` | Admin | Edycja dziecka. | ✅ |
 | DELETE | `/api/children/:id` | Admin | Usunięcie (kaskadowo wpłaty i powiązania rodziców; pełna migawka w logu audytowym). | ✅ |
+| GET | `/api/children/:id/ledger?semesterId=` | Każdy | Rozliczenie dziecka wg kategorii (kwota/wpłacono/brakuje) w danym semestrze. | ✅ |
 
 ## Semestry
 
@@ -46,46 +47,46 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/categories` | Admin | Lista kategorii (z flagą `archived`). | 🚧 |
-| POST | `/api/categories` | Admin | Nowa kategoria. | 🚧 |
-| PATCH | `/api/categories/:id` | Admin | Edycja nazwy. | 🚧 |
-| DELETE | `/api/categories/:id` | Admin | Soft delete (`archived = true`) — historyczne wpłaty zostają widoczne. | 🚧 |
-| GET | `/api/categories/:id/targets` | Admin | Domyślne kwoty per semestr. | 🚧 |
-| PUT | `/api/categories/:id/targets/:semesterId` | Admin | Ustawienie/zmiana kwoty domyślnej. | 🚧 |
-| PUT | `/api/children/:id/amounts/:categoryId/:semesterId` | Admin | Nadpisanie kwoty dla konkretnego dziecka. | 🚧 |
-| DELETE | `/api/children/:id/amounts/:categoryId/:semesterId` | Admin | Usunięcie nadpisania (powrót do kwoty domyślnej). | 🚧 |
+| GET | `/api/categories` | Admin | Lista kategorii (z flagą `archived`). | ✅ |
+| POST | `/api/categories` | Admin | Nowa kategoria. | ✅ |
+| PATCH | `/api/categories/:id` | Admin | Edycja nazwy. | ✅ |
+| DELETE | `/api/categories/:id` | Admin | Soft delete (`archived = true`) — historyczne wpłaty zostają widoczne. | ✅ |
+| GET | `/api/categories/:id/targets` | Admin | Domyślne kwoty per semestr. | ✅ |
+| PUT | `/api/categories/:id/targets/:semesterId` | Admin | Ustawienie/zmiana kwoty domyślnej. | ✅ |
+| PUT | `/api/children/:id/amounts/:categoryId/:semesterId` | Admin | Nadpisanie kwoty dla konkretnego dziecka. | ✅ |
+| DELETE | `/api/children/:id/amounts/:categoryId/:semesterId` | Admin | Usunięcie nadpisania (powrót do kwoty domyślnej). | ✅ |
 
 ## Wpłaty
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/payments?childId=&categoryId=&semesterId=` | Każdy | Admin: wszystkie (z filtrami). Rodzic: tylko wpłaty swojego dziecka. | 🚧 |
-| POST | `/api/payments` | Admin | Nowa wpłata (dopuszczalne wiele częściowych na tę samą kategorię/semestr). | 🚧 |
-| PATCH | `/api/payments/:id` | Admin | Edycja wpłaty. | 🚧 |
-| DELETE | `/api/payments/:id` | Admin | Usunięcie wpłaty (hard delete + migawka w logu audytowym). | 🚧 |
+| GET | `/api/payments?childId=&categoryId=&semesterId=` | Każdy | Admin: wszystkie (z filtrami). Rodzic: tylko wpłaty swojego dziecka. | ✅ |
+| POST | `/api/payments` | Admin | Nowa wpłata (dopuszczalne wiele częściowych na tę samą kategorię/semestr). | ✅ |
+| PATCH | `/api/payments/:id` | Admin | Edycja wpłaty. | ✅ |
+| DELETE | `/api/payments/:id` | Admin | Usunięcie wpłaty (hard delete + migawka w logu audytowym). | ✅ |
 
 ## Ustawienia
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/settings` | Admin | Odczyt (`publicViewEnabled`, `activeSemesterId`). | 🚧 |
-| PATCH | `/api/settings` | Admin | Zmiana ustawień, w tym przełącznik widoku publicznego. | 🚧 |
+| GET | `/api/settings` | Admin | Odczyt (`publicViewEnabled`, `activeSemesterId`). | ✅ |
+| PATCH | `/api/settings` | Admin | Zmiana ustawień, w tym przełącznik widoku publicznego. | ✅ |
 
 ## Raporty
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/reports/arrears?semesterId=` | Admin | Zestawienie zaległości wg dziecka/kategorii. | 🚧 |
-| GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy (reużywa `services/reports.service.ts`). | 🚧 |
-| GET | `/api/reports/child/:id?semesterId=` | Admin | Karta wpłat pojedynczego dziecka. | 🚧 |
+| GET | `/api/reports/arrears?semesterId=` | Admin | Zestawienie zaległości wg dziecka/kategorii. | ✅ |
+| GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy (reużywa `services/reports.service.ts`). | ✅ |
+| GET | `/api/reports/child/:id?semesterId=` | Admin | Karta wpłat pojedynczego dziecka. | ✅ |
 | GET | `/api/reports/export?report=&format=pdf\|xlsx` | Admin | Eksport raportu do pliku. | 🚧 |
 
 ## Import / eksport
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/backup/export` | Admin | Pełny eksport bazy do jednego pliku JSON. | 🚧 |
-| POST | `/api/backup/import` | Admin | Pełne przywrócenie bazy z pliku JSON. | 🚧 |
+| GET | `/api/backup/export` | Admin | Pełny eksport bazy do jednego pliku JSON. | ✅ |
+| POST | `/api/backup/import` | Admin | Pełne przywrócenie bazy z pliku JSON. | ✅ |
 
 ## Widok publiczny
 
