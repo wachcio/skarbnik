@@ -312,6 +312,27 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-09 (8) — Wygląd raportów, znaczniki czasu, zakładka Raporty
+- Eksporty PDF/Excel dopasowane do redesignu: pasek marki, kolorowe
+  nagłówki tabel, pasiaste wiersze, karta podsumowania (zebrano/plan/%,
+  zielona gdy w 100%), kolumna "Brakuje" w zaległościach pogrubiona na
+  czerwono — te same sygnały co odznaki w appce.
+- Nazwy plików mają teraz datę i godzinę wygenerowania (czas polski),
+  np. `zestawienie-semestr-1-2026-09-09-1140.pdf`. Nowy wspólny
+  `backend/src/lib/time.ts` — przy okazji naprawiony ten sam błąd co
+  wcześniej w `/api/health`: linijka "wygenerowano" w PDF liczyła czas
+  kontenera (UTC), nie polski.
+- Raporty dostały własną zakładkę w dolnej nawigacji (tylko admin),
+  tak jak Dzieci i Wpłaty — usunięty link-skrót z Ustawień i
+  nieaktualna notka "Raporty — w kolejnym etapie prac" (raporty były
+  gotowe od dawna, notka po prostu nigdy nie została sprzątnięta).
+- Złapane przez realne obejrzenie PDF-a (konwersja do PNG przez
+  `pdftoppm`, nie tylko `pdftotext`): karta podsumowania miała
+  nachodzący na siebie tekst i wychodziła poza stronę — `pdfTable()`
+  zostawiał kursor `doc.x` w złym miejscu (prawa kolumna tabeli), a
+  kod karty rysował się względem niego zamiast lewego marginesu.
+  Naprawione + zweryfikowane ponownie tym samym sposobem.
+
 ### 2026-09-09 (7) — Redesign wizualny (inspiracja: dashboardy finansowe)
 - Użytkownik podesłał zrzuty z materiału inwestycyjnego (mocna typografia,
   duże pewne liczby, zielony/czerwony jako informacja a nie ozdoba,
