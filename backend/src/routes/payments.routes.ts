@@ -4,7 +4,7 @@ import { prisma } from "../lib/prisma";
 import { requireAuth, requireRole, sessionLabel } from "../middleware/auth";
 import { asyncHandler } from "../lib/asyncHandler";
 import { recordAudit } from "../services/auditLog.service";
-import { getChildSemesterTotals } from "../services/childLedger.service";
+import { getChildLedger } from "../services/childLedger.service";
 
 export const paymentsRouter = Router();
 paymentsRouter.use(requireAuth);
@@ -12,25 +12,47 @@ paymentsRouter.use(requireAuth);
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 
 /**
- * Zabezpieczenie: suma wpłat dziecka w semestrze (po wszystkich
- * kategoriach razem) nie może przewyższyć sumy kwot docelowych
- * wszystkich kategorii dla tego dziecka w tym semestrze. `excludePaymentId`
- * pomija samą edytowaną wpłatę, żeby nie liczyć jej starej kwoty podwójnie.
+ * Dwa zabezpieczenia budżetowe, sprawdzane za jednym pobraniem rozliczenia:
+ * 1. Wpłaty w POJEDYNCZEJ kategorii nie mogą przewyższyć jej własnej kwoty
+ *    docelowej (nawet jeśli suma po wszystkich kategoriach mieściłaby się
+ *    w budżecie).
+ * 2. Suma wpłat dziecka w semestrze po WSZYSTKICH kategoriach razem nie
+ *    może przewyższyć sumy ich kwot docelowych — w praktyce konsekwencja
+ *    punktu 1., ale zostaje jako dodatkowa asercja na wypadek przyszłych
+ *    zmian w logice.
+ * `excludePaymentId` pomija samą edytowaną wpłatę, żeby nie liczyć jej
+ * starej kwoty podwójnie.
  */
-async function assertWithinChildSemesterBudget(
+async function assertWithinBudget(
   childId: string,
   semesterId: string,
+  categoryId: string,
   amountToAdd: number,
   excludePaymentId?: string
 ): Promise<string | null> {
-  const totals = await getChildSemesterTotals(childId, semesterId, { excludePaymentId });
-  const newTotal = totals.paidTotal + amountToAdd;
-  if (newTotal > totals.targetTotal) {
+  const ledger = await getChildLedger(childId, semesterId, { excludePaymentId });
+
+  const categoryRow = ledger.find((row) => row.categoryId === categoryId);
+  const categoryTarget = categoryRow?.target ?? 0;
+  const categoryPaidSoFar = categoryRow?.paid ?? 0;
+  const newCategoryTotal = categoryPaidSoFar + amountToAdd;
+  if (newCategoryTotal > categoryTarget) {
     return (
-      `Łączna kwota wpłat tego dziecka w tym semestrze (${currency.format(newTotal)}) ` +
-      `przekroczyłaby sumę kwot docelowych wszystkich kategorii (${currency.format(totals.targetTotal)}).`
+      `Wpłaty w tej kategorii dla tego dziecka (${currency.format(newCategoryTotal)}) ` +
+      `przekroczyłyby jej kwotę docelową (${currency.format(categoryTarget)}).`
     );
   }
+
+  const targetTotal = ledger.reduce((sum, row) => sum + row.target, 0);
+  const paidTotal = ledger.reduce((sum, row) => sum + row.paid, 0);
+  const newTotal = paidTotal + amountToAdd;
+  if (newTotal > targetTotal) {
+    return (
+      `Łączna kwota wpłat tego dziecka w tym semestrze (${currency.format(newTotal)}) ` +
+      `przekroczyłaby sumę kwot docelowych wszystkich kategorii (${currency.format(targetTotal)}).`
+    );
+  }
+
   return null;
 }
 
@@ -98,7 +120,7 @@ paymentsRouter.post(
     if (category.archived) return res.status(400).json({ error: "Kategoria jest zarchiwizowana." });
     if (!semester) return res.status(400).json({ error: "Nie znaleziono semestru." });
 
-    const budgetError = await assertWithinChildSemesterBudget(childId, semesterId, parsed.data.amount);
+    const budgetError = await assertWithinBudget(childId, semesterId, categoryId, parsed.data.amount);
     if (budgetError) return res.status(400).json({ error: budgetError });
 
     const payment = await prisma.payment.create({
@@ -135,11 +157,13 @@ paymentsRouter.patch(
     // przesłane pola (PATCH jest częściowy).
     const effectiveChildId = parsed.data.childId ?? before.childId;
     const effectiveSemesterId = parsed.data.semesterId ?? before.semesterId;
+    const effectiveCategoryId = parsed.data.categoryId ?? before.categoryId;
     const effectiveAmount = parsed.data.amount ?? Number(before.amount);
 
-    const budgetError = await assertWithinChildSemesterBudget(
+    const budgetError = await assertWithinBudget(
       effectiveChildId,
       effectiveSemesterId,
+      effectiveCategoryId,
       effectiveAmount,
       before.id
     );

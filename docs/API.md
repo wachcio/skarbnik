@@ -61,8 +61,8 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
 | GET | `/api/payments?childId=&categoryId=&semesterId=` | Każdy | Admin: wszystkie (z filtrami). Rodzic: tylko wpłaty swojego dziecka. | ✅ |
-| POST | `/api/payments` | Admin | Nowa wpłata (dopuszczalne wiele częściowych na tę samą kategorię/semestr). Odrzucona (400), gdyby suma wpłat dziecka w semestrze przekroczyła sumę kwot docelowych wszystkich kategorii. | ✅ |
-| PATCH | `/api/payments/:id` | Admin | Edycja wpłaty. Ten sam limit sumy co przy tworzeniu (stara kwota edytowanej wpłaty nie jest liczona podwójnie). | ✅ |
+| POST | `/api/payments` | Admin | Nowa wpłata (dopuszczalne wiele częściowych na tę samą kategorię/semestr). Odrzucona (400), gdyby wpłaty w tej kategorii przekroczyły jej kwotę docelową, albo gdyby suma po wszystkich kategoriach przekroczyła sumę ich kwot docelowych. | ✅ |
+| PATCH | `/api/payments/:id` | Admin | Edycja wpłaty. Te same dwa limity co przy tworzeniu (stara kwota edytowanej wpłaty nie jest liczona podwójnie). | ✅ |
 | DELETE | `/api/payments/:id` | Admin | Usunięcie wpłaty (hard delete + migawka w logu audytowym). | ✅ |
 
 ## Ustawienia
