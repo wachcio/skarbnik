@@ -264,6 +264,27 @@ składek, wpłaty przypisane do semestrów, oraz gotowe raporty zaległości.
 publiczny, konta rodziców, import/eksport JSON, motyw jasny/ciemny,
 mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 
+### 2026-09-09 (5) — Edycja kategorii/kont rodziców + eksport PDF/Excel
+- Użytkownik złapał realny brak: ekrany kategorii i kont rodziców miały
+  tworzenie i usuwanie/archiwizację, ale żadnej edycji — mimo że backend
+  już to wspierał (`PATCH /api/categories/:id`, `PATCH /api/users/:id`).
+  Dodane: zmiana nazwy kategorii inline, edycja danych i przypisanych
+  dzieci konta rodzica (z formularzem identycznym jak przy tworzeniu).
+  Zweryfikowane przez Docker+MySQL, łącznie z edge case'em czyszczenia
+  wszystkich przypisań dziecka do zera.
+- Zaimplementowany eksport raportów do PDF/Excel — ostatni brakujący
+  element z pierwotnej specyfikacji. PDF przez `pdfkit` z osadzonym
+  fontem PT Sans (licencja OFL, `backend/assets/fonts/`) — standardowe
+  fonty PDF (Helvetica) nie obsługują polskich znaków diakrytycznych,
+  co realnie sprawdziłem (wyeksportowałem kategorię i dziecko z pełnym
+  zestawem polskich znaków, wyciągnąłem tekst z PDF-a przez `pdftotext`
+  i potwierdziłem poprawne renderowanie). Excel przez `exceljs`.
+  Przyciski eksportu (PDF/Excel) przy obu raportach na `/reports`.
+
+**Stan funkcjonalny:** cały zakres z pierwotnej specyfikacji zrealizowany,
+łącznie z eksportem PDF/Excel. Backend nie ma już żadnego stuba 501 —
+`docs/API.md` w całości oznaczone jako gotowe.
+
 ## Następne kroki (checklist)
 - [x] Szczegółowy schemat bazy danych w Prisma (encje, relacje, indeksy).
 - [x] Kontrakt API — lista endpointów REST i uprawnień per rola.
@@ -277,15 +298,16 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 - [x] Backend: kategorie/kwoty (w tym nadpisania per dziecko), wpłaty,
       ustawienia (przełącznik widoku publicznego), raporty (zaległości/
       karta dziecka/zbiorczy).
-- [x] Frontend: zarządzanie kategoriami, wpłaty na ekranie dziecka,
-      przełącznik widoku publicznego, ekran raportów.
-- [x] Backend + frontend: zarządzanie kontami rodziców, pełny
-      eksport/import JSON.
-- [ ] **Do zrobienia przez użytkownika:** zweryfikować nowy UI w
-      przeglądarce (raporty, konta rodziców, eksport/import backupu —
-      import na środowisku testowym, nie produkcyjnym!) po `git pull` +
-      `docker compose up -d --build`.
-- [ ] Eksport raportów do PDF/Excel (dziś 501 — jedyny pozostały stub
-      w całym API).
-- [ ] Nice-to-have na przyszłość: powiadomienia (e-mail/SMS) o
-      zaległościach — świadomie poza zakresem od początku projektu.
+- [x] Frontend: zarządzanie kategoriami (w tym edycja nazwy), wpłaty na
+      ekranie dziecka, przełącznik widoku publicznego, ekran raportów.
+- [x] Backend + frontend: zarządzanie kontami rodziców (w tym edycja),
+      pełny eksport/import JSON.
+- [x] Eksport raportów do PDF/Excel.
+- [ ] **Do zrobienia przez użytkownika:** zweryfikować cały UI w
+      przeglądarce — to pierwszy moment, gdy warto usiąść i przeklikać
+      całość jako prawdziwy skarbnik (dodanie dziecka → kategorii →
+      wpłaty → sprawdzenie raportu → eksport PDF/Excel), a nie punktowo
+      po jednej funkcji na raz.
+- [ ] Nice-to-have na przyszłość (świadomie poza zakresem od początku):
+      powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
+      rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
