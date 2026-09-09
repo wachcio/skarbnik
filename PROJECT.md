@@ -312,6 +312,34 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-09 (7) — Redesign wizualny (inspiracja: dashboardy finansowe)
+- Użytkownik podesłał zrzuty z materiału inwestycyjnego (mocna typografia,
+  duże pewne liczby, zielony/czerwony jako informacja a nie ozdoba,
+  wykresy donut, nawigacja zakładkowa) i poprosił o inspirację tym stylem.
+  Przeniesione z dostosowaniem do kontekstu (zaufane narzędzie dla
+  rodziców, nie hype'owy dashboard krypto): ta sama pewność w prezentacji
+  liczb, spokojniejsza całość.
+- Manrope (nagłówki, duże liczby) + Inter (treść/formularze) z Google
+  Fonts. Głębsza granatowa czerń w ciemnym motywie, dodane tokeny
+  semantyczne (`--success`, `--warning` obok `--danger`).
+- Nowy komponent `DonutChart` (czyste SVG, bez biblioteki wykresów) —
+  zebrano/planowane na stronie publicznej i w raporcie zbiorczym.
+- Nowy `.status-pill` (zielony/czerwony/neutralny) dla statusu kategorii
+  i wpłat w kilku miejscach na raz.
+- Aktywna zakładka w dolnej nawigacji dostała wypełnione tło zamiast
+  samej zmiany koloru.
+- Złapane przez realne obejrzenie, nie tylko czytanie diffu: kategoria
+  bez ustawionej kwoty docelowej pokazywała się jako czerwona "brakuje
+  0,00 zł" — mylące, bo nic nie jest tam winne. Dodany trzeci,
+  neutralny wariant odznaki.
+- **Zweryfikowane wizualnie, nie tylko kompilacją**: zainstalowany
+  Playwright + Chromium w katalogu tymczasowym (nie jako zależność
+  projektu), odpalony pełny `docker-compose`, zalogowanie, przejście
+  przez dzieci → kategorie → wpłaty dziecka → zakładkę Wpłaty →
+  Raporty → Ustawienia → stronę publiczną, zrzuty ekranu w obu
+  motywach. To ta weryfikacja złapała błąd z neutralną odznaką opisany
+  wyżej.
+
 ### 2026-09-09 (6) — Zakładka "Wpłaty" (odnajdywalność)
 - Realny feedback: funkcja dodawania wpłat istniała i działała (na
   karcie dziecka), ale nikt by tam nie trafił bez podpowiedzi — brak
