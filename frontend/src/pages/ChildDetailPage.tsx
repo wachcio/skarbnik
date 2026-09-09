@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import type { Child } from "../lib/types";
 import { ChildForm, type ChildInput } from "../components/ChildForm";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { ChildPayments } from "../components/ChildPayments";
 
 export function ChildDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -115,7 +116,9 @@ export function ChildDetailPage() {
         </div>
       )}
 
-      <p className="muted footnote">Składki i wpłaty dla tego dziecka — w kolejnym etapie prac.</p>
+      <div className="stack-card">
+        <ChildPayments childId={child.id} />
+      </div>
 
       {confirmingDelete && (
         <ConfirmDialog

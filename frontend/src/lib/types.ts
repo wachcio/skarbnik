@@ -23,6 +23,43 @@ export interface Semester {
   label: string;
 }
 
+export interface CategoryTarget {
+  id: string;
+  categoryId: string;
+  semesterId: string;
+  amount: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  archived: boolean;
+  targets: CategoryTarget[];
+}
+
+export interface Payment {
+  id: string;
+  amount: number;
+  paidAt: string;
+  description: string | null;
+}
+
+export interface CategoryLedgerRow {
+  categoryId: string;
+  categoryName: string;
+  archived: boolean;
+  target: number;
+  paid: number;
+  remaining: number;
+  payments: Payment[];
+}
+
+export interface Settings {
+  id: string;
+  publicViewEnabled: boolean;
+  activeSemesterId: string | null;
+}
+
 export interface CategorySummary {
   categoryId: string;
   name: string;
