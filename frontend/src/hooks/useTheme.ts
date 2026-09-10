@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
-/** Zapamiętuje wybór w localStorage; "system" usuwa atrybut i oddaje
- * decyzję @media (prefers-color-scheme) w theme.css. */
+/** Przy pierwszej wizycie (brak zapisanego wyboru) dopasowujemy się do
+ * preferencji systemowej — dopiero kliknięcie przełącznika zapisuje
+ * jawny, trwały wybór w localStorage. */
+function getInitialTheme(): Theme {
+  try {
+    const stored = localStorage.getItem("theme");
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    // localStorage może być niedostępny (np. tryb prywatny) — pomijamy
+  }
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+/** Prosty przełącznik jasny/ciemny (ikonka słońca/księżyca) — zapamiętuje
+ * wybór w localStorage i ustawia atrybut na <html>, który theme.css
+ * czyta jako źródło prawdy (patrz [data-theme] w theme.css). */
 export function useTheme(): [Theme, (theme: Theme) => void] {
-  const [theme, setThemeState] = useState<Theme>(
-    () => (localStorage.getItem("theme") as Theme | null) ?? "system"
-  );
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "system") {
-      root.removeAttribute("data-theme");
-    } else {
-      root.setAttribute("data-theme", theme);
-    }
+    document.documentElement.setAttribute("data-theme", theme);
     try {
       localStorage.setItem("theme", theme);
     } catch {
@@ -23,5 +30,5 @@ export function useTheme(): [Theme, (theme: Theme) => void] {
     }
   }, [theme]);
 
-  return [theme, setThemeState];
+  return [theme, setTheme];
 }
