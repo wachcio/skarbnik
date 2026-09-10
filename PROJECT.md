@@ -318,6 +318,22 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (24) — Dostęp admina do logu audytowego
+- Log audytowy był zapisywany od pierwszego commita (recordAudit() przy
+  każdej operacji CRUD), ale nie było jak go zobaczyć. Nowy
+  `GET /api/audit-log` (admin, stronicowany kursorem, filtry
+  entityType/action) + nowy ekran `/audit-log` (link z Ustawień):
+  lista wpisów z kolorowym znacznikiem akcji, rozwijane „Szczegóły”
+  z JSON przed/po, „Wczytaj więcej”. Dopisana też sekcja w Pomocy.
+- Zweryfikowane, że `dataBefore`/`dataAfter` nigdzie w appce nie
+  zawierają `passwordHash` (przegląd wszystkich miejsc wywołania
+  recordAudit()) — bezpiecznie zwracane wprost przez API.
+- **Zweryfikowane** na żywym Dockerze+MySQL: curlem (różnorodne
+  zdarzenia w poprawnej kolejności, filtry, paginacja kursorem bez
+  duplikatów/luk, 403 dla rodzica) i Playwrightem (pełny przepływ z
+  Ustawień, rozwijanie szczegółów bez hasła w zrzucie, filtrowanie,
+  przekierowanie rodzica, oba motywy).
+
 ### 2026-09-10 (23) — Dział pomocy + pływający przycisk "?"
 - Pływający przycisk pomocy widoczny na każdym zalogowanym ekranie
   (nad dolną nawigacją), prowadzący do nowej strony `/help` z 13
