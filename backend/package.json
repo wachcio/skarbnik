@@ -11,7 +11,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "admin:reset-password": "node dist/scripts/resetAdminPassword.js",
+    "admin:reset-password:dev": "tsx src/scripts/resetAdminPassword.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

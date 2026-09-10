@@ -34,6 +34,22 @@ istnieje.
 
 Logowanie: `ADMIN_EMAIL` / `ADMIN_PASSWORD` z `.env` (utworzone przez seed).
 
+## Odzyskiwanie hasła administratora
+
+Admin może zmienić własne hasło samodzielnie w Ustawieniach (o ile pamięta
+obecne). Jeśli hasło zostało zapomniane, appka celowo NIE ma "resetu przez
+e-mail" (nie wysyła maili — patrz [PROJECT.md](./PROJECT.md)) — jedyna droga
+to bezpośredni dostęp do serwera:
+
+```bash
+docker compose exec backend npm run admin:reset-password
+```
+
+Komenda pyta o e-mail konta administratora i nowe hasło (interaktywnie, hasło
+niewidoczne na ekranie), zeruje ewentualną blokadę logowania i wylogowuje
+wszystkie aktywne sesje tego konta. Działa wyłącznie na kontach z rolą ADMIN —
+hasła rodziców resetuje admin z poziomu appki (Ustawienia → Konta rodziców).
+
 ## Praca lokalna bez Dockera
 
 ```bash
