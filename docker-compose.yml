@@ -81,8 +81,25 @@ services:
     volumes:
       - ./deploy/nginx/templates:/etc/nginx/templates:ro
       - ./deploy/nginx/empty-default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/reload-entrypoint.sh:/reload-entrypoint.sh:ro
       - ./deploy/nginx/letsencrypt-data/conf:/etc/letsencrypt:ro
       - ./deploy/nginx/letsencrypt-data/www:/var/www/certbot:ro
+    # `certbot` (usługa niżej) co 12h PODMIENIA plik certyfikatu na dysku, gdy
+    # zbliża się jego wygaśnięcie — ale samo to NIE wystarcza: nginx trzyma
+    # certyfikat wczytany w pamięci procesu i nie zauważy podmiany pliku bez
+    # `nginx -s reload`. certbot nie ma jak bezpiecznie wywołać reloadu w
+    # INNYM kontenerze (wymagałoby zamontowania mu gniazda Dockera, czyli
+    # faktycznie pełnego dostępu roota do hosta — nieproporcjonalne ryzyko
+    # dla samego przeładowania configu). Zamiast tego nginx przeładowuje SAM
+    # SIEBIE co 12h w tle, przez deploy/nginx/reload-entrypoint.sh — PATRZ
+    # KOMENTARZ W TYM PLIKU: to musi podmieniać cały entrypoint (a nie tylko
+    # `command:`), bo oryginalny /docker-entrypoint.sh obrazu uruchamia
+    # renderowanie naszego szablonu TYLKO gdy pierwszy argument polecenia to
+    # dosłownie "nginx" — zwykłe `command: sh -c "..."` łamało ten warunek
+    # i cicho pomijało cały nasz config (zweryfikowane: to realnie się
+    # zdarzyło, nginx startował bez błędu, ale nie nasłuchiwał na żadnym
+    # porcie).
+    entrypoint: ["/bin/sh", "/reload-entrypoint.sh"]
 
   certbot:
     image: certbot/certbot
