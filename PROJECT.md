@@ -334,6 +334,47 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
   dla admina i rodzica, oba motywy.
 
+### 2026-09-10 (29) — Samodzielny nginx+certbot dla VPS bez NGINX Proxy Managera
+- Do tej pory appka zakładała reverse proxy z panelem GUI (NGINX Proxy
+  Manager — dom albo VPS). Na potrzebę wdrożenia na goły VPS (OVH, DNS
+  na MyDevil) doszły dwie nowe, domyślnie WYŁĄCZONE usługi w
+  `docker-compose.yml` (profil `standalone-proxy`, żeby nie kolidować
+  z istniejącymi wdrożeniami z NPM): `nginx` (szablon konfiguracji przez
+  wbudowany w oficjalny obraz mechanizm envsubst, `deploy/nginx/
+  templates/app.conf.template`) i `certbot` (pętla `certbot renew` co
+  12h). Robią dokładnie to, co dotąd Proxy Host + Custom Location "/api"
+  w NPM — jedna domena, `/` do frontendu, `/api` do backendu, TLS.
+  Zestaw szyfrów TLS ("intermediate" wg Mozilli, same ECDHE) wpisany
+  wprost w szablonie, bez pobierania niczego z zewnątrz przy starcie.
+- Nowy `deploy/nginx/init-letsencrypt.sh` — jednorazowy bootstrap
+  pierwszego certyfikatu (wzorzec wmnnd/nginx-certbot: tymczasowy
+  samopodpisany cert → realny cert od Let's Encrypt przez webroot →
+  reload nginksa). Nowe zmienne `APP_DOMAIN`/`LETSENCRYPT_EMAIL`
+  w `.env.example`, nowa sekcja w README.md z pełną sekwencją poleceń.
+- **Dwa realne błędy złapane dopiero przy odpaleniu skryptu na żywym
+  Dockerze** (nie przy samym czytaniu kodu): (1) `--entrypoint` w
+  Dockerze to jedno słowo, nie cały string polecenia — wielosłowowe
+  komendy (openssl/rm) trzeba było owinąć w `sh -c "..."`. (2) poważniejszy:
+  usługa `certbot` ma na stałe ustawiony entrypoint na pętlę odnawiania,
+  więc `docker compose run certbot certonly ...` bez `--entrypoint
+  certbot` PO CICHU uruchamiał tę pętlę zamiast żądania certyfikatu —
+  kontener kończył się kodem 0 i komunikatem "No renewals were
+  attempted", nigdy nie pytając Let's Encrypt o nic. To dokładnie ten
+  rodzaj cichej porażki, który wyglądałby na sukces na produkcji
+  (appka zostałaby na tymczasowym samopodpisanym certyfikacie).
+  Naprawione i ponownie zweryfikowane: po poprawce skrypt realnie
+  dobija się do Let's Encrypt (potwierdzone przez celowo nieprawidłowy
+  e-mail testowy, na który ACME poprawnie odpowiedziało odrzuceniem,
+  zamiast ciszy).
+- **Zweryfikowane** end-to-end na pełnym Dockerze+MySQL z fałszywą
+  domeną testową: `docker compose config` parsuje nowe usługi/profil,
+  nginx startuje z wyrenderowanym configiem, poprawnie proxuje `/`
+  (frontend SPA) i `/api/*` (backend) po HTTPS, HTTP przekierowuje na
+  HTTPS z wyjątkiem ścieżki ACME challenge, a pełny przepływ logowania
+  przez proxy zwraca ciasteczko sesji z `Secure`+`HttpOnly` (potwierdza
+  poprawne działanie `TRUST_PROXY`/`X-Forwarded-Proto` przez nowy
+  reverse proxy).
+
 ### 2026-09-10 (28) — Wyszukiwarka na liście dzieci
 - Nowe pole `type="search"` nad listą w zakładce „Dzieci", filtrujące
   widoczne wiersze na bieżąco (przy każdym wciśnięciu klawisza), po
