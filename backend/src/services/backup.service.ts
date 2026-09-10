@@ -68,6 +68,18 @@ const paymentSchema = z.object({
   updatedAt: dateLike.optional(),
 });
 
+const expenseSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  semesterId: z.string(),
+  amount: z.coerce.number(),
+  spentAt: dateLike,
+  description: z.string().nullable().optional(),
+  createdById: z.string().nullable().optional(),
+  createdAt: dateLike.optional(),
+  updatedAt: dateLike.optional(),
+});
+
 const settingsSchema = z
   .object({
     id: z.string().default("singleton"),
@@ -88,6 +100,7 @@ export const backupSchema = z.object({
     parentChildLinks: z.array(parentChildLinkSchema),
     childCategoryAmounts: z.array(childCategoryAmountSchema),
     payments: z.array(paymentSchema),
+    expenses: z.array(expenseSchema).default([]),
     settings: settingsSchema,
   }),
 });
@@ -102,20 +115,31 @@ export type BackupData = z.infer<typeof backupSchema>["data"];
  * konta nowe, tymczasowe hasło (patrz importBackup).
  */
 export async function exportBackup() {
-  const [semesters, categories, categoryTargets, children, users, parentChildLinks, childCategoryAmounts, payments, settings] =
-    await Promise.all([
-      prisma.semester.findMany(),
-      prisma.category.findMany(),
-      prisma.categoryTarget.findMany(),
-      prisma.child.findMany(),
-      prisma.user.findMany({
-        select: { id: true, email: true, displayName: true, role: true, createdAt: true, updatedAt: true },
-      }),
-      prisma.parentChildLink.findMany(),
-      prisma.childCategoryAmount.findMany(),
-      prisma.payment.findMany(),
-      prisma.setting.findUnique({ where: { id: "singleton" } }),
-    ]);
+  const [
+    semesters,
+    categories,
+    categoryTargets,
+    children,
+    users,
+    parentChildLinks,
+    childCategoryAmounts,
+    payments,
+    expenses,
+    settings,
+  ] = await Promise.all([
+    prisma.semester.findMany(),
+    prisma.category.findMany(),
+    prisma.categoryTarget.findMany(),
+    prisma.child.findMany(),
+    prisma.user.findMany({
+      select: { id: true, email: true, displayName: true, role: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.parentChildLink.findMany(),
+    prisma.childCategoryAmount.findMany(),
+    prisma.payment.findMany(),
+    prisma.expense.findMany(),
+    prisma.setting.findUnique({ where: { id: "singleton" } }),
+  ]);
 
   return {
     version: BACKUP_VERSION,
@@ -129,6 +153,7 @@ export async function exportBackup() {
       parentChildLinks,
       childCategoryAmounts,
       payments,
+      expenses,
       settings,
     },
   };
@@ -162,7 +187,10 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
   await prisma.$transaction(
     async (tx) => {
       // Usuwanie w kolejności zgodnej z referencjami — kaskady w schema.prisma
-      // i tak by to załatwiły, ale nie polegamy wyłącznie na nich.
+      // i tak by to załatwiły dla Payment (Child → Cascade), ale Expense nie
+      // jest powiązany z dzieckiem i ma Restrict na kategorii/semestrze, więc
+      // musi zniknąć PRZED nimi, inaczej ich deleteMany wywali błąd FK.
+      await tx.expense.deleteMany({});
       await tx.child.deleteMany({});
       await tx.category.deleteMany({});
       await tx.semester.deleteMany({});
@@ -186,6 +214,7 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
       await tx.parentChildLink.createMany({ data: data.parentChildLinks });
       await tx.childCategoryAmount.createMany({ data: data.childCategoryAmounts });
       await tx.payment.createMany({ data: data.payments });
+      await tx.expense.createMany({ data: data.expenses });
 
       if (data.settings) {
         await tx.setting.upsert({
@@ -212,6 +241,7 @@ export async function importBackup(data: BackupData): Promise<ImportResult> {
       dzieci: data.children.length,
       konta: data.users.length,
       wpłaty: data.payments.length,
+      wydatki: data.expenses.length,
     },
     temporaryPasswords,
   };
