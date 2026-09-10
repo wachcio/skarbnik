@@ -165,14 +165,16 @@ export function sendSummaryPdf(res: Response, summary: SemesterSummary, semester
   pdfTable(
     doc,
     [
-      { header: "Kategoria", width: 250 },
-      { header: "Zebrano", width: 115, align: "right" },
-      { header: "Plan", width: 115, align: "right" },
+      { header: "Kategoria", width: 190 },
+      { header: "Zebrano", width: 90, align: "right" },
+      { header: "Plan", width: 90, align: "right" },
+      { header: "Wydano", width: 110, align: "right" },
     ],
     summary.byCategory.map((c) => [
       c.name + (c.archived ? " (zarchiwizowana)" : ""),
       currency.format(c.collected),
       currency.format(c.target),
+      currency.format(c.spent),
     ])
   );
 
@@ -183,7 +185,7 @@ export function sendSummaryPdf(res: Response, summary: SemesterSummary, semester
   const boxX = doc.page.margins.left;
   const boxY = doc.y;
   const boxWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-  const boxHeight = 70;
+  const boxHeight = 88;
   doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8).fill(BRAND_SOFT);
 
   doc.fillColor(INK_MUTED).font("Body").fontSize(9).text("RAZEM ZEBRANO / ZAPLANOWANO", boxX + 16, boxY + 12);
@@ -199,7 +201,13 @@ export function sendSummaryPdf(res: Response, summary: SemesterSummary, semester
     .fillColor(INK_MUTED)
     .font("Body")
     .fontSize(9)
-    .text(`Liczba dzieci w grupie: ${summary.childCount}`, boxX + 16, boxY + 54);
+    .text(`Wydano w tym semestrze: ${currency.format(summary.spentTotal)}`, boxX + 16, boxY + 54);
+
+  doc
+    .fillColor(INK_MUTED)
+    .font("Body")
+    .fontSize(9)
+    .text(`Liczba dzieci w grupie: ${summary.childCount}`, boxX + 16, boxY + 70);
 
   doc.fillColor(INK);
   doc.x = boxX;
@@ -277,18 +285,24 @@ export async function sendSummaryXlsx(res: Response, summary: SemesterSummary, s
     { header: "Zarchiwizowana", key: "archived", width: 16 },
     { header: "Zebrano", key: "collected", width: 16, style: { numFmt: PLN_FORMAT } },
     { header: "Plan", key: "target", width: 16, style: { numFmt: PLN_FORMAT } },
+    { header: "Wydano", key: "spent", width: 16, style: { numFmt: PLN_FORMAT } },
   ];
   styleHeaderRow(sheet.getRow(1));
-  sheet.autoFilter = { from: "A1", to: "D1" };
+  sheet.autoFilter = { from: "A1", to: "E1" };
 
   for (const c of summary.byCategory) {
-    sheet.addRow({ name: c.name, archived: c.archived ? "tak" : "nie", collected: c.collected, target: c.target });
+    sheet.addRow({ name: c.name, archived: c.archived ? "tak" : "nie", collected: c.collected, target: c.target, spent: c.spent });
   }
   const lastDataRow = sheet.rowCount;
   zebraStripe(sheet, 2, lastDataRow);
 
   sheet.addRow({});
-  const totalsRow = sheet.addRow({ name: "RAZEM", collected: summary.collectedTotal, target: summary.targetTotal });
+  const totalsRow = sheet.addRow({
+    name: "RAZEM",
+    collected: summary.collectedTotal,
+    target: summary.targetTotal,
+    spent: summary.spentTotal,
+  });
   totalsRow.eachCell((cell) => {
     cell.font = { bold: true };
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ARGB_BRAND_SOFT } };

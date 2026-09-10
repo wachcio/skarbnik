@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "../components/SemesterSelect";
 import { DonutChart } from "../components/DonutChart";
-import type { CategorySummary, SemesterSummary } from "../lib/types";
+import type { CategorySummary, SemesterSummary, TreasuryBalance } from "../lib/types";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 
@@ -33,6 +33,7 @@ export function ReportsPage() {
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [summary, setSummary] = useState<SemesterSummary | null>(null);
   const [arrears, setArrears] = useState<ArrearsRow[] | null>(null);
+  const [balance, setBalance] = useState<TreasuryBalance | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,6 +49,15 @@ export function ReportsPage() {
       if (!summaryRes.ok || !arrearsRes.ok) setError("Nie udało się pobrać raportów.");
     });
   }, [selectedId]);
+
+  // Stan kasy jest niezależny od wybranego semestru (jedno realne konto
+  // skarbnika) — pobierany osobno, raz, bez odświeżania przy zmianie
+  // dropdownu.
+  useEffect(() => {
+    apiFetch("/reports/balance").then(async (res) => {
+      if (res.ok) setBalance(await res.json());
+    });
+  }, []);
 
   if (user?.role !== "ADMIN") return <Navigate to="/settings" replace />;
   if (!semesters || !selectedId) return <p className="muted">Wczytywanie…</p>;
@@ -68,10 +78,38 @@ export function ReportsPage() {
     <div>
       <div className="page-header">
         <h1>Raporty</h1>
-        <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
       </div>
 
       {error && <p className="error-text">{error}</p>}
+
+      <div className="card treasury-balance-card">
+        <h2>Stan kasy</h2>
+        <p className="muted footnote-tight">Łącznie za wszystkie semestry — to jedno realne konto skarbnika.</p>
+        {!balance && <p className="muted">Wczytywanie…</p>}
+        {balance && (
+          <div className="donut-legend" style={{ marginTop: "0.6rem" }}>
+            <div className="donut-legend-row">
+              <span className="muted">Zebrano łącznie</span>
+              <span className="value">{currency.format(balance.collectedTotal)}</span>
+            </div>
+            <div className="donut-legend-row">
+              <span className="muted">Wydano łącznie</span>
+              <span className="value">{currency.format(balance.spentTotal)}</span>
+            </div>
+            <div className="donut-legend-row">
+              <span className="muted">Skarbnik dysponuje teraz</span>
+              <span className="value" style={{ color: balance.balance >= 0 ? "var(--success)" : "var(--danger)" }}>
+                {currency.format(balance.balance)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="page-header" style={{ marginTop: "1.25rem" }}>
+        <h2 style={{ marginBottom: 0 }}>Semestr</h2>
+        <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
+      </div>
 
       <div className="card">
         <div className="page-header" style={{ marginBottom: "0.6rem" }}>
@@ -91,6 +129,10 @@ export function ReportsPage() {
                 <div className="donut-legend-row">
                   <span className="muted">Planowane</span>
                   <span className="value">{currency.format(summary.targetTotal)}</span>
+                </div>
+                <div className="donut-legend-row">
+                  <span className="muted">Wydano w tym semestrze</span>
+                  <span className="value">{currency.format(summary.spentTotal ?? 0)}</span>
                 </div>
                 <div className="donut-legend-row">
                   <span className="muted">Dzieci w grupie</span>
@@ -120,6 +162,11 @@ export function ReportsPage() {
                       <div className="progress-track small">
                         <div className={done ? "progress-fill success" : "progress-fill"} style={{ width: `${catPercent}%` }} />
                       </div>
+                      {!!category.spent && (
+                        <p className="muted footnote-tight" style={{ marginTop: "0.25rem", marginBottom: 0 }}>
+                          Wydano: {currency.format(category.spent)}
+                        </p>
+                      )}
                     </li>
                   );
                 })}

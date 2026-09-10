@@ -6,11 +6,13 @@ export interface CategorySummary {
   archived: boolean;
   target: number;
   collected: number;
+  spent: number;
 }
 
 export interface SemesterSummary {
   targetTotal: number;
   collectedTotal: number;
+  spentTotal: number;
   childCount: number;
   byCategory: CategorySummary[];
 }
@@ -18,16 +20,20 @@ export interface SemesterSummary {
 /**
  * Zestawienie zbiorcze grupy dla danego semestru: suma kwot docelowych
  * (z uwzględnieniem nadpisań per dziecko) vs suma wpłat, wg kategorii.
- * Używane zarówno przez widok publiczny (zagregowane, bez danych dzieci),
- * jak i raport zbiorczy dla admina.
+ * Do tego suma wydatków w tym samym semestrze/kategorii — druga strona
+ * bilansu, żeby dało się na jednym ekranie porównać zebrano/wydano.
+ * Używane zarówno przez widok publiczny (zagregowane, bez danych dzieci
+ * i bez wydatków — patrz routes/public.routes.ts), jak i raport zbiorczy
+ * dla admina.
  *
  * Nie filtrujemy kategorii po `archived` w zapytaniu — historycznie
- * zebrane pieniądze na zarchiwizowanej kategorii mają się dalej liczyć
- * do sum. Odsiewamy dopiero te zarchiwizowane, które nigdy nie miały tu
- * żadnej kwoty ani wpłaty (żeby nie zaśmiecały zestawienia).
+ * zebrane/wydane pieniądze na zarchiwizowanej kategorii mają się dalej
+ * liczyć do sum. Odsiewamy dopiero te zarchiwizowane, które nigdy nie
+ * miały tu żadnej kwoty, wpłaty ani wydatku (żeby nie zaśmiecały
+ * zestawienia).
  */
 export async function getSemesterSummary(semesterId: string): Promise<SemesterSummary> {
-  const [categories, children, payments] = await Promise.all([
+  const [categories, children, payments, expenses] = await Promise.all([
     prisma.category.findMany({
       include: { targets: { where: { semesterId } } },
     }),
@@ -35,6 +41,7 @@ export async function getSemesterSummary(semesterId: string): Promise<SemesterSu
       include: { categoryAmounts: { where: { semesterId } } },
     }),
     prisma.payment.findMany({ where: { semesterId } }),
+    prisma.expense.findMany({ where: { semesterId } }),
   ]);
 
   const byCategory: CategorySummary[] = categories
@@ -51,16 +58,45 @@ export async function getSemesterSummary(semesterId: string): Promise<SemesterSu
         .filter((p) => p.categoryId === category.id)
         .reduce((sum, p) => sum + Number(p.amount), 0);
 
-      return { categoryId: category.id, name: category.name, archived: category.archived, target, collected };
+      const spent = expenses
+        .filter((e) => e.categoryId === category.id)
+        .reduce((sum, e) => sum + Number(e.amount), 0);
+
+      return { categoryId: category.id, name: category.name, archived: category.archived, target, collected, spent };
     })
-    .filter((c) => !c.archived || c.target > 0 || c.collected > 0);
+    .filter((c) => !c.archived || c.target > 0 || c.collected > 0 || c.spent > 0);
 
   return {
     targetTotal: byCategory.reduce((sum, c) => sum + c.target, 0),
     collectedTotal: byCategory.reduce((sum, c) => sum + c.collected, 0),
+    spentTotal: byCategory.reduce((sum, c) => sum + c.spent, 0),
     childCount: children.length,
     byCategory,
   };
+}
+
+export interface TreasuryBalance {
+  collectedTotal: number;
+  spentTotal: number;
+  balance: number;
+}
+
+/**
+ * Stan kasy skarbnika "tu i teraz": suma wszystkich wpłat minus suma
+ * wszystkich wydatków, za całą historię (wszystkie semestry razem).
+ * Celowo NIEZALEŻNE od wybranego w UI semestru — to jedno realne konto,
+ * które nie zeruje się przy przełączeniu semestru w dropdownie.
+ */
+export async function getTreasuryBalance(): Promise<TreasuryBalance> {
+  const [payments, expenses] = await Promise.all([
+    prisma.payment.aggregate({ _sum: { amount: true } }),
+    prisma.expense.aggregate({ _sum: { amount: true } }),
+  ]);
+
+  const collectedTotal = Number(payments._sum.amount ?? 0);
+  const spentTotal = Number(expenses._sum.amount ?? 0);
+
+  return { collectedTotal, spentTotal, balance: collectedTotal - spentTotal };
 }
 
 export interface ArrearsRow {

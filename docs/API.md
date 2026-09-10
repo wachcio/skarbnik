@@ -88,7 +88,8 @@ Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kat
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
 | GET | `/api/reports/arrears?semesterId=` | Admin | Zestawienie zaległości wg dziecka/kategorii. | ✅ |
-| GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy (reużywa `services/reports.service.ts`). | ✅ |
+| GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy dla semestru: zebrano/plan/wydano wg kategorii (reużywa `services/reports.service.ts`). | ✅ |
+| GET | `/api/reports/balance` | Admin | Stan kasy skarbnika — suma wszystkich wpłat minus suma wszystkich wydatków, za całą historię (wszystkie semestry razem, niezależnie od parametru semestru). | ✅ |
 | GET | `/api/reports/child/:id?semesterId=` | Admin | Karta wpłat pojedynczego dziecka. | ✅ |
 | GET | `/api/reports/export?report=summary\|arrears&format=pdf\|xlsx&semesterId=` | Admin | Eksport zestawienia zbiorczego lub zaległości do pliku (PDF z osadzonym fontem PT Sans dla polskich znaków, albo XLSX). | ✅ |
 
@@ -103,7 +104,7 @@ Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kat
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/public/summary?semesterId=` | Brak | Zagregowane dane grupy (`targetTotal`, `collectedTotal`, `byCategory`) — **bez** danych dzieci. Zwraca `404`, gdy `publicViewEnabled = false`. | ✅ |
+| GET | `/api/public/summary?semesterId=` | Brak | Zagregowane dane grupy (`targetTotal`, `collectedTotal`, `byCategory`) — **bez** danych dzieci i **bez** wydatków/stanu kasy (te pola skarbnika są celowo odcięte przed wysłaniem). Zwraca `404`, gdy `publicViewEnabled = false`. | ✅ |
 
 ## Diagnostyka
 

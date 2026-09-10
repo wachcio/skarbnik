@@ -2,7 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireRole } from "../middleware/auth";
 import { asyncHandler } from "../lib/asyncHandler";
-import { getSemesterSummary, getArrears } from "../services/reports.service";
+import { getSemesterSummary, getArrears, getTreasuryBalance } from "../services/reports.service";
 import { getChildLedger } from "../services/childLedger.service";
 import { sendSummaryPdf, sendSummaryXlsx, sendArrearsPdf, sendArrearsXlsx } from "../services/export.service";
 
@@ -20,6 +20,13 @@ reportsRouter.get(
     const semesterId = requireSemesterId(req);
     if (!semesterId) return res.status(400).json({ error: "Podaj semesterId." });
     res.json(await getSemesterSummary(semesterId));
+  })
+);
+
+reportsRouter.get(
+  "/balance",
+  asyncHandler(async (_req, res) => {
+    res.json(await getTreasuryBalance());
   })
 );
 

@@ -19,6 +19,11 @@ export function AppShell() {
       </main>
 
       <nav className="bottom-nav" aria-label="Nawigacja główna">
+        {isAdmin && (
+          <NavLink to="/reports" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
+            Raporty
+          </NavLink>
+        )}
         <NavLink to="/children" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
           Dzieci
         </NavLink>
@@ -28,11 +33,6 @@ export function AppShell() {
         {isAdmin && (
           <NavLink to="/expenses" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
             Wydatki
-          </NavLink>
-        )}
-        {isAdmin && (
-          <NavLink to="/reports" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
-            Raporty
           </NavLink>
         )}
         <NavLink to="/settings" className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>

@@ -26,7 +26,10 @@ publicRouter.get(
       return res.json({ targetTotal: 0, collectedTotal: 0, childCount: 0, byCategory: [] });
     }
 
-    const summary = await getSemesterSummary(semesterId);
-    res.json(summary);
+    // Wydatki i stan kasy to informacja dla skarbnika (admina), nie dla
+    // anonimowych widzów — publiczny widok pokazuje tylko postęp zbiórki,
+    // więc pola `spent`/`spentTotal` są tu celowo odcinane.
+    const { spentTotal, byCategory, ...rest } = await getSemesterSummary(semesterId);
+    res.json({ ...rest, byCategory: byCategory.map(({ spent, ...category }) => category) });
   })
 );

@@ -66,13 +66,23 @@ export interface CategorySummary {
   archived: boolean;
   target: number;
   collected: number;
+  /** Brak na widoku publicznym (backend celowo odcina to pole tam). */
+  spent?: number;
 }
 
 export interface SemesterSummary {
   targetTotal: number;
   collectedTotal: number;
+  /** Brak na widoku publicznym. */
+  spentTotal?: number;
   childCount: number;
   byCategory: CategorySummary[];
+}
+
+export interface TreasuryBalance {
+  collectedTotal: number;
+  spentTotal: number;
+  balance: number;
 }
 
 export interface Expense {

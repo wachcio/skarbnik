@@ -390,6 +390,13 @@ textarea.input {
   margin-top: 1rem;
 }
 
+/* Karta stanu kasy na stronie głównej (Raporty) — lekko wyróżniona,
+   bo to pierwsza rzecz, którą skarbnik chce zobaczyć po zalogowaniu. */
+.treasury-balance-card {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 65%);
+}
+
 .list {
   list-style: none;
   margin: 0;

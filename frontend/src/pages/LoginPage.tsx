@@ -21,7 +21,7 @@ export function LoginPage() {
       setError(result.error);
       return;
     }
-    navigate("/children", { replace: true });
+    navigate("/", { replace: true });
   }
 
   return (

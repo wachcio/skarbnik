@@ -23,8 +23,16 @@ function RequireAuth({ children }: { children: ReactElement }) {
 function RedirectIfAuthed({ children }: { children: ReactElement }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/children" replace />;
+  if (user) return <Navigate to="/" replace />;
   return children;
+}
+
+/** Strona główna po zalogowaniu: admin trafia na Raporty (pierwsza rzecz,
+ * którą chce widzieć skarbnik — stan kasy i postęp zbiórki), rodzic —
+ * który nie ma dostępu do raportów — na listę dzieci jak dotychczas. */
+function HomeRedirect() {
+  const { user } = useAuth();
+  return <Navigate to={user?.role === "ADMIN" ? "/reports" : "/children"} replace />;
 }
 
 function AppRoutes() {
@@ -46,7 +54,7 @@ function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<Navigate to="/children" replace />} />
+        <Route path="/" element={<HomeRedirect />} />
         <Route path="/children" element={<ChildrenListPage />} />
         <Route path="/children/:id" element={<ChildDetailPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
