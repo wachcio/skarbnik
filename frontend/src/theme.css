@@ -850,3 +850,107 @@ code {
   border-radius: 999px;
   padding: 0.35rem 0.75rem;
 }
+
+/* ---- pomoc ---- */
+
+/* Pływający przycisk "?" nad dolną nawigacją (patrz .bottom-nav — appka
+   rezerwuje jej wysokość w .page przez calc(1.25rem + 68px), więc ten sam
+   68px + odstęp trzyma przycisk tuż nad nią, niezależnie od ekranu). */
+.help-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(68px + 0.75rem + env(safe-area-inset-bottom));
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.2rem;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(20, 30, 60, 0.3);
+  z-index: 6;
+  border: none;
+}
+
+.help-fab:hover {
+  filter: brightness(1.06);
+}
+
+.help-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.help-section + .help-section {
+  margin-top: 0.6rem;
+}
+
+.help-section summary {
+  cursor: pointer;
+  padding: 0.85rem 1.1rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.help-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-section summary::after {
+  content: "+";
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--ink-muted);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.help-section[open] summary::after {
+  content: "−";
+}
+
+.help-section summary:hover {
+  background: var(--surface-alt);
+}
+
+.help-section-body {
+  padding: 0 1.1rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--line);
+  padding-top: 0.85rem;
+}
+
+.help-section-body p {
+  margin: 0 0 0.6rem;
+}
+
+.help-section-body p:last-child {
+  margin-bottom: 0;
+}
+
+.help-section-body ul {
+  margin: 0 0 0.6rem;
+  padding-left: 1.2rem;
+}
+
+.help-section-body li {
+  margin-bottom: 0.3rem;
+}
+
+.help-section-body strong {
+  color: var(--ink);
+}

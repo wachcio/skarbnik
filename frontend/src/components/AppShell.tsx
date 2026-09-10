@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { AppHeader } from "./AppHeader";
+import { HelpButton } from "./HelpButton";
 
 export function AppShell() {
   const { user, logout } = useAuth();
@@ -17,6 +18,8 @@ export function AppShell() {
       <main className="page">
         <Outlet />
       </main>
+
+      <HelpButton />
 
       <nav className="bottom-nav" aria-label="Nawigacja główna">
         {isAdmin && (
