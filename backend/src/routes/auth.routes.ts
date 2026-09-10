@@ -105,6 +105,58 @@ authRouter.post(
   })
 );
 
+const changeEmailSchema = z.object({
+  currentPassword: z.string().min(1, "Podaj obecne hasło."),
+  newEmail: z.string().email("Podaj poprawny e-mail."),
+});
+
+// Samodzielna zmiana WŁASNEGO e-maila (dowolna rola) — e-mail to zarazem
+// login, więc tak samo jak przy zmianie hasła wymagamy potwierdzenia
+// obecnym hasłem (inaczej przejęta sesja mogłaby po cichu przejąć konto
+// na stałe, podmieniając login na kontrolowany przez atakującego adres).
+authRouter.post(
+  "/change-email",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const parsed = changeEmailSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Nieprawidłowe dane." });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.session.userId } });
+    if (!user) return res.status(401).json({ error: "Sesja nieważna." });
+
+    const currentOk = await verifyPassword(parsed.data.currentPassword, user.passwordHash);
+    if (!currentOk) return res.status(400).json({ error: "Obecne hasło jest nieprawidłowe." });
+
+    if (parsed.data.newEmail === user.email) {
+      return res.status(400).json({ error: "Nowy e-mail jest taki sam jak obecny." });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email: parsed.data.newEmail } });
+    if (existing) return res.status(409).json({ error: "Konto z tym adresem e-mail już istnieje." });
+
+    const updated = await prisma.user.update({ where: { id: user.id }, data: { email: parsed.data.newEmail } });
+
+    // Sesja trzyma e-mail do etykiet w logu audytowym (sessionLabel) — bez
+    // tej aktualizacji kolejne wpisy w TEJ SAMEJ sesji pokazywałyby stary
+    // adres aż do ponownego zalogowania.
+    req.session.email = updated.email;
+
+    await recordAudit({
+      entityType: "User",
+      entityId: user.id,
+      action: "UPDATE",
+      performedById: user.id,
+      performedByLabel: sessionLabel(req),
+      dataBefore: { email: user.email },
+      dataAfter: { email: updated.email, note: "Samodzielna zmiana e-maila." },
+    });
+
+    res.json({ email: updated.email });
+  })
+);
+
 authRouter.get("/me", requireAuth, asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.session.userId },

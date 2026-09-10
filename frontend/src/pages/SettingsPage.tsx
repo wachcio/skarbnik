@@ -5,6 +5,7 @@ import { apiFetch } from "../lib/api";
 import type { Settings } from "../lib/types";
 import { BackupSection } from "../components/BackupSection";
 import { ChangePasswordSection } from "../components/ChangePasswordSection";
+import { ChangeEmailSection } from "../components/ChangeEmailSection";
 
 export function SettingsPage() {
   const { user } = useAuth();
@@ -58,6 +59,7 @@ export function SettingsPage() {
         </dl>
       </div>
 
+      <ChangeEmailSection />
       <ChangePasswordSection />
 
       {isAdmin && (

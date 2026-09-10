@@ -9,6 +9,9 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
+  /** Ponowne pobranie /auth/me — np. po samodzielnej zmianie e-maila,
+   * żeby "Zalogowano jako" w Ustawieniach od razu pokazało nową wartość. */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -46,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser: refresh }}>{children}</AuthContext.Provider>
   );
 }
 
