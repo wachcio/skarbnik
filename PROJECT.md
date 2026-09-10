@@ -334,6 +334,52 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
   dla admina i rodzica, oba motywy.
 
+### 2026-09-10/11 (30) — Poprawki po pierwszym realnym wdrożeniu na VPS OVH
+- Pierwsze prawdziwe uruchomienie `init-letsencrypt.sh` na produkcyjnym
+  VPS-ie (`skarbnik.wachcio.pl`, OVH) ujawniło dwie rzeczy, których nie
+  złapały testy na lokalnym Dockerze:
+  1. **`FRONTEND_PORT` ustawiony w `.env` na `80` (a potem `443`)** —
+     błąd konfiguracyjny użytkownika, nie appki, ale realny: frontend
+     bezpośrednio zajmował port publiczny, który miał należeć wyłącznie
+     do `nginx`, uniemożliwiając mu start. Przypomnienie w dokumentacji:
+     przy `standalone-proxy` `FRONTEND_PORT`/`APP_PORT` mają zostać na
+     domyślnych wartościach.
+  2. **Kontener `nginx` z nieświeżym stanem sieci Dockera** — po
+     pierwszej nieudanej próbie (zanim naprawiono punkt 1) kontener
+     `nginx` utknął w pętli restartów z błędem "host not found in
+     upstream 'backend'", mimo że DNS Dockera per se działało
+     bezbłędnie (potwierdzone niezależnym kontenerem na tej samej
+     sieci). Zwykłe `docker compose up -d nginx` tego nie naprawiało —
+     potrzebne było `--force-recreate`, żeby kontener dostał naprawdę
+     świeże podłączenie do sieci.
+- Namierzone i naprawione w samym skrypcie (nie tylko obejście
+  ręczne), żeby przyszłe uruchomienia (także odnowienia/przebudowy
+  appki przez użytkownika) nie trafiały na to samo:
+  - `docker compose up -d nginx` → `--force-recreate` na stałe.
+  - Nowa pętla oczekiwania (do 30s, sprawdzająca realną odpowiedź HTTP
+    na porcie 80) PRZED usunięciem tymczasowego certyfikatu i prośbą do
+    Let's Encrypt — poprzednio skrypt ruszał dalej natychmiast po
+    `docker compose up`, co na żywym serwerze skutkowało "Connection
+    refused" od Let's Encrypt, bo nginx jeszcze faktycznie nie stał.
+    Przy okazji złapany dodatkowy błąd testowy: `curl http://localhost/`
+    bez nagłówka Host trafiał w wbudowaną w obraz `nginx:alpine`
+    domyślną stronę powitalną (`/etc/nginx/conf.d/default.conf`), więc
+    naiwny test gotowości mógłby fałszywie pokazywać "gotowe" nawet
+    przy zepsutym własnym configu — dodany `deploy/nginx/
+    empty-default.conf` (podmienia domyślny plik obrazu) usuwa tę
+    domyślną stronę całkowicie.
+  - **Zweryfikowane lokalnie w obu kierunkach**: celowo zepsuty config
+    nginksa (fatalny błąd składni — ten sam rodzaj awarii co realny
+    problem z DNS/certyfikatem na VPS-ie) poprawnie zatrzymuje skrypt
+    po 30s z czytelnym błędem, nigdy nie dotykając certyfikatu ani
+    Let's Encrypt; zdrowy nginx przechodzi test natychmiast, bez
+    regresji na wcześniej zweryfikowanej ścieżce happy-path.
+- Po tych poprawkach i skorygowaniu `.env` na VPS-ie — do potwierdzenia
+  przez użytkownika po `git pull` i ponownym `init-letsencrypt.sh` —
+  `skarbnik.wachcio.pl` powinien dostać prawdziwy certyfikat Let's
+  Encrypt przez samodzielny nginx+certbot z tego repo, bez NGINX Proxy
+  Managera.
+
 ### 2026-09-10 (29) — Samodzielny nginx+certbot dla VPS bez NGINX Proxy Managera
 - Do tej pory appka zakładała reverse proxy z panelem GUI (NGINX Proxy
   Manager — dom albo VPS). Na potrzebę wdrożenia na goły VPS (OVH, DNS
