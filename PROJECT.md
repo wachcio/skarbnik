@@ -318,6 +318,22 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (16) — Samodzielna zmiana hasła w Ustawieniach
+- Skarbnik (i rodzic — endpoint jest rolo-agnostyczny, więc nie było
+  powodu tego sztucznie blokować) może zmienić własne hasło z panelu
+  Ustawienia, bez pomocy admina. Inne niż istniejący ręczny reset hasła
+  INNEJ osoby (`/api/users/:id/reset-password`, tylko admin, tylko dla
+  kont rodziców) — tu wymagane jest podanie obecnego hasła.
+- Nowy `POST /api/auth/change-password` (dowolna rola, `requireAuth`):
+  weryfikacja obecnego hasła, ta sama polityka siły hasła co reszta
+  appki, wpis w AuditLog.
+- Nowy komponent `ChangePasswordSection.tsx` w Ustawieniach (obecne/
+  nowe/powtórz nowe hasło), nowa klasa `.success-text` w theme.css.
+- **Zweryfikowane** na żywym Dockerze+MySQL: curlem (złe obecne hasło,
+  za słabe nowe, poprawna zmiana, logowanie starym hasłem odrzucone/
+  nowym zaakceptowane — dla admina i dla rodzica), Playwrightem w obu
+  motywach (pusty formularz, błąd, zielony komunikat sukcesu).
+
 ### 2026-09-10 (15) — Naprawa: import kopii zapasowej 500 na produkcji
 - **Zgłoszone przez użytkownika na produkcji** (zrzut DevTools): import
   pliku JSON w Ustawieniach kończył się `500 Internal Server Error`.
