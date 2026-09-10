@@ -318,6 +318,27 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (13) — Podsumowanie zaległości per dziecko
+- Sekcja zaległości grupowała już wpłaty po dziecku, ale brakowało
+  sumy — trzeba było ręcznie dodać kwoty z poszczególnych kategorii.
+  Karta każdego dziecka w Raportach dostała odznakę „razem X zł” obok
+  imienia, obok istniejących pozycji per kategoria.
+- Eksporty: PDF renderuje teraz osobną mini-tabelę na dziecko (nagłówek
+  z imieniem) zamkniętą pogrubionym wierszem „Razem” z sumą plan/
+  wpłacono/brakuje — `pdfTable()` dostał reużywalną opcję
+  `boldRowIndex` do takich wierszy podsumowania. Excel: ten sam układ
+  co dotychczas (płaska tabela z kolumną „Dziecko”), ale z pogrubionym,
+  podświetlonym wierszem „Razem” po wierszach każdego dziecka —
+  zwykła zebra usunięta z tego arkusza, bo przeplatanie z podsumowaniami
+  nie dawałoby już czytelnego wzoru.
+- **Zweryfikowane** na żywym Dockerze+MySQL: dwoje dzieci z celowo
+  dobranymi częściowymi wpłatami (zaległości 20+200=220 i 1+240=241 zł).
+  PDF obejrzany przez pdftoppm, Excel odczytany programowo — sumy się
+  zgadzają, wiersze „Razem” pogrubione. Ekran zweryfikowany
+  Playwrightem w obu motywach (zrzut samej listy zaległości, bo
+  pełnostronicowy zrzut duplikował dolną nawigację — artefakt
+  position:fixed w Chromium, nie błąd appki).
+
 ### 2026-09-10 (12) — Wydatki w raportach, stan kasy, Raporty jako strona główna
 - Skoro wydatki mają już kategorię i semestr (patrz wpis niżej), raporty
   pokazują teraz obie strony bilansu: zestawienie zbiorcze semestru ma
