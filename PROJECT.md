@@ -303,6 +303,9 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 - [x] Backend + frontend: zarządzanie kontami rodziców (w tym edycja),
       pełny eksport/import JSON.
 - [x] Eksport raportów do PDF/Excel.
+- [x] Zabezpieczenia budżetowe wpłat: limit zbiorczy per dziecko/semestr
+      i limit per pojedyncza kategoria.
+- [x] Backend + frontend: zakładka „Wydatki” (pełny CRUD, tylko admin).
 - [ ] **Do zrobienia przez użytkownika:** zweryfikować cały UI w
       przeglądarce — to pierwszy moment, gdy warto usiąść i przeklikać
       całość jako prawdziwy skarbnik (dodanie dziecka → kategorii →
@@ -311,6 +314,51 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 - [ ] Nice-to-have na przyszłość (świadomie poza zakresem od początku):
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
+      Ewentualnie: zestawienie "zebrano na cel vs wydano na cel" łączące
+      wpłaty i wydatki w jednym raporcie (Wydatki są już powiązane z
+      kategorią, więc dane na to pozwalają — nikt jeszcze o to nie prosił).
+
+### 2026-09-10 (11) — Zakładka "Wydatki" (pełny CRUD, tylko admin)
+- Skarbnik wydaje pieniądze na określone cele — dodana druga strona
+  bilansu obok wpłat. Nowy model `Expense` (kategoria, semestr, kwota,
+  data „kiedy", opcjonalny opis „za co"), powiązany z `Category`, a nie
+  z konkretnym dzieckiem — spójne z tym, że „cel” i „kategoria” są w
+  appce tym samym pojęciem.
+- Nowa zakładka „Wydatki” w dolnej nawigacji, widoczna wyłącznie dla
+  admina (rodzice nie mają dostępu — ani do zakładki, ani do
+  `/api/expenses`, wymuszone przez `requireRole("ADMIN")`). Ekran:
+  lista wydatków w wybranym semestrze z sumą łączną, dodawanie, edycja
+  inline i usuwanie z potwierdzeniem. Blokada dodania/edycji wydatku na
+  zarchiwizowaną kategorię, tak jak przy wpłatach. Każda operacja
+  loguje się do audytu (migawka przed/po).
+- Przy okazji poprawiony błąd odkryty własną weryfikacją: piąta pozycja
+  w dolnej nawigacji (Wydatki) groziła przepełnieniem menu, więc
+  „Wyloguj” przeniesione z dolnej nawigacji do nagłówka. To z kolei na
+  wąskich telefonach (poniżej ~380px) powodowało zawijanie nagłówka do
+  dwóch linii — naprawione: wydzielony wspólny komponent `AppHeader`
+  (usunął przy okazji trzykrotną duplikację nagłówka), responsywna
+  nazwa apki („Skarbnik” zamiast „Skarbnik Przedszkolny” pod 400px),
+  krótsza etykieta motywu („Auto” zamiast „Systemowy”).
+- **Zweryfikowane** na żywym Dockerze+MySQL (migracja przez
+  `prisma migrate deploy`) oraz wizualnie przez Playwright w obu
+  motywach: pełny przepływ dodania/edycji/usunięcia wydatku, blokada
+  403 dla konta rodzica na `/api/expenses` (curl), odrzucenie wydatku
+  na zarchiwizowaną kategorię, oraz zmierzone (nie tylko obejrzane)
+  przepełnienie nagłówka na 320/360/390px — 0px po poprawce (wcześniej
+  31px przy 360px).
+
+### 2026-09-09 (10) — Limit wpłaty na pojedynczą kategorię
+- Uzupełnienie zbiorczego limitu z poprzedniego wpisu: oprócz sumy po
+  wszystkich kategoriach, także wpłaty w **jednej konkretnej kategorii**
+  nie mogą przekroczyć jej własnej kwoty docelowej (z uwzględnieniem
+  nadpisania per dziecko). Zgłoszone przez użytkownika zrzutem ekranu —
+  kategoria przepłacona do 210/200 zł.
+- Backend: dodatkowy warunek w tym samym miejscu co limit zbiorczy
+  (`POST`/`PATCH /api/payments`), korzystający z tego samego
+  `getChildLedger`, więc bez dodatkowych zapytań do bazy.
+- Zweryfikowane na Dockerze+MySQL: wpłata dokładnie na granicy kwoty
+  docelowej kategorii przechodzi, przekroczenie o 1 grosz odrzucone,
+  edycja zmniejszająca wpłatę w tej samej kategorii przechodzi.
 
 ### 2026-09-09 (9) — Limit sumy wpłat dziecka na semestr
 - Zabezpieczenie: suma wpłat dziecka w danym semestrze (po wszystkich
