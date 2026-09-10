@@ -318,6 +318,26 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (21) — Naprawa: polskie sortowanie nazwisk dzieci
+- Zgłoszone przez użytkownika: nazwiska dzieci w widoku Dzieci (admin)
+  i w raportach powinny być alfabetyczne. Zapytania SQL już sortowały
+  (`orderBy: [{lastName:"asc"},{firstName:"asc"}]` w GET /api/children
+  i getArrears) — prawdziwa przyczyna leżała w kolacji: kolumny
+  `children.firstName`/`lastName` dziedziczyły `utf8mb4_unicode_ci`,
+  która sortuje np. "Żaba"/"Źrebak" PRZED "Zych" — niepoprawnie wg
+  polskiego alfabetu (Z, Ź, Ż). Zweryfikowane empirycznie na prawdziwym
+  MySQL (HEX() surowych bajtów, żeby wykluczyć mojibake z pipe'a
+  testowego) — `utf8mb4_polish_ci` sortuje to poprawnie.
+- Nowa migracja `polish_collation_child_names`: `ALTER TABLE children
+  MODIFY firstName/lastName ... COLLATE utf8mb4_polish_ci` — celowo
+  tylko te dwie kolumny, nie cała baza. Zero zmian w kodzie aplikacji —
+  zapytania były już poprawne, brakowało tylko kolacji.
+- **Zweryfikowane** na żywym Dockerze+MySQL, migracja zastosowana przez
+  zwykłego użytkownika appki (nie root) jak na produkcji: 8 dzieci z
+  trudnymi nazwiskami (Cichy, Ćwik, Lis, Łoś, Maj, Zych, Źrebak, Żaba)
+  przez prawdziwe API — idealny polski porządek w GET /api/children i
+  w raporcie zaległości, potwierdzone też wizualnie w UI (Playwright).
+
 ### 2026-09-10 (20) — Kolejność sekcji w Ustawieniach
 - Zmiana e-maila i Zmiana hasła (dotyczą własnego konta) przeniesione
   na sam koniec listy sekcji — za Widokiem publicznym, Kategoriami,
