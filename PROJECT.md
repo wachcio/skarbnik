@@ -318,6 +318,21 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (25) — Przełącznik motywu jako ikonka słońca/księżyca
+- Zamiast listy rozwijanej (Auto/Jasny/Ciemny) — okrągły przycisk z
+  jedną ikonką pokazującą aktualnie aktywny motyw (☀️/🌙), klik
+  przełącza na przeciwny. `useTheme` uproszczony do dwóch stanów;
+  pierwsza wizyta bez zapisanego wyboru nadal dopasowuje się do
+  `prefers-color-scheme`, tylko że jednym kliknięciem zamienia to w
+  jawny, zapamiętywany wybór zamiast stale śledzić system.
+- **Zweryfikowane**: statycznym podglądem builda przez Playwright (bez
+  backendu — czysto frontendowa zmiana) — ikonka poprawnie startuje wg
+  systemu, przełącza się po kliknięciu, przetrwała odświeżenie strony,
+  0px przepełnienia na 320px. Dodatkowo na żywym Dockerze zmierzony
+  nagłówek zalogowanego ekranu (przełącznik + Wyloguj) na 320/360/390px
+  — 0px wszędzie, bez regresji względem wcześniejszej poprawki tego
+  nagłówka.
+
 ### 2026-09-10 (24) — Dostęp admina do logu audytowego
 - Log audytowy był zapisywany od pierwszego commita (recordAudit() przy
   każdej operacji CRUD), ale nie było jak go zobaczyć. Nowy
