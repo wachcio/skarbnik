@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { Category } from "../lib/types";
+import { useLanguage } from "../context/LanguageContext";
 
 export interface ExpenseInput {
   categoryId: string;
@@ -17,6 +18,7 @@ interface ExpenseFormProps {
 }
 
 export function ExpenseForm({ categories, initial, submitLabel, onSubmit, onCancel }: ExpenseFormProps) {
+  const { t } = useLanguage();
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? categories[0]?.id ?? "");
   const [amount, setAmount] = useState(initial?.amount ?? "");
   const [spentAt, setSpentAt] = useState(initial?.spentAt ?? new Date().toISOString().slice(0, 10));
@@ -31,21 +33,21 @@ export function ExpenseForm({ categories, initial, submitLabel, onSubmit, onCanc
     try {
       await onSubmit({ categoryId, amount, spentAt, description });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
   }
 
   if (categories.length === 0) {
-    return <p className="muted footnote-tight">Najpierw dodaj co najmniej jedną kategorię w ustawieniach.</p>;
+    return <p className="muted footnote-tight">{t("expenseForm.noCategoriesFirst")}</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="form card form-card">
       <div className="form-row">
         <label className="field">
-          Na co (kategoria)
+          {t("expenseForm.category")}
           <select className="input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -55,7 +57,7 @@ export function ExpenseForm({ categories, initial, submitLabel, onSubmit, onCanc
           </select>
         </label>
         <label className="field">
-          Kwota
+          {t("expenseForm.amount")}
           <input
             className="input"
             type="number"
@@ -68,26 +70,26 @@ export function ExpenseForm({ categories, initial, submitLabel, onSubmit, onCanc
         </label>
       </div>
       <label className="field">
-        Kiedy
+        {t("expenseForm.when")}
         <input className="input" type="date" value={spentAt} onChange={(e) => setSpentAt(e.target.value)} required />
       </label>
       <label className="field">
-        Opis (opcjonalnie)
+        {t("expenseForm.description")}
         <input
           className="input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="np. bilety wstępu, zakup nagród"
+          placeholder={t("expenseForm.descriptionPlaceholder")}
         />
       </label>
       {error && <p className="error-text">{error}</p>}
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
-          {submitting ? "Zapisywanie…" : submitLabel}
+          {submitting ? t("common.saving") : submitLabel}
         </button>
         {onCancel && (
           <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>
-            Anuluj
+            {t("common.cancel")}
           </button>
         )}
       </div>

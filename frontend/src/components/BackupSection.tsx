@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ImportResult {
@@ -32,8 +33,11 @@ function warsawTimestampForFilename(): string {
  * wielu kont naraz, zamiast przepisywania z ekranu jedno po drugim.
  * Średnik jako separator (nie przecinek) — zgodnie z polskim Excelem,
  * BOM na początku dla poprawnych polskich znaków po otwarciu w Excelu. */
-function downloadTemporaryPasswords(temporaryPasswords: Array<{ email: string; temporaryPassword: string }>) {
-  const rows = ["E-mail;Hasło tymczasowe", ...temporaryPasswords.map((p) => `${p.email};${p.temporaryPassword}`)];
+function downloadTemporaryPasswords(
+  temporaryPasswords: Array<{ email: string; temporaryPassword: string }>,
+  csvHeader: string
+) {
+  const rows = [csvHeader, ...temporaryPasswords.map((p) => `${p.email};${p.temporaryPassword}`)];
   const csv = "\uFEFF" + rows.join("\r\n") + "\r\n";
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -48,6 +52,7 @@ function downloadTemporaryPasswords(temporaryPasswords: Array<{ email: string; t
 
 export function BackupSection() {
   const { logout } = useAuth();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,11 +74,11 @@ export function BackupSection() {
       const res = await apiFetch("/backup/import", { method: "POST", body: JSON.stringify(payload) });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zaimportować kopii zapasowej.");
+        throw new Error(body.error ?? t("backup.importError"));
       }
       setResult(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nieprawidłowy plik kopii zapasowej.");
+      setError(err instanceof Error ? err.message : t("backup.invalidFile"));
     } finally {
       setImporting(false);
       setPendingFile(null);
@@ -84,14 +89,13 @@ export function BackupSection() {
   if (result) {
     return (
       <div className="card stack-card">
-        <h2>Import zakończony</h2>
+        <h2>{t("backup.doneTitle")}</h2>
         <p className="muted footnote-tight" style={{ marginTop: 0 }}>
-          Przywrócono: {Object.entries(result.restoredCounts).map(([k, v]) => `${k}: ${v}`).join(", ")}
+          {t("backup.restored", {
+            summary: Object.entries(result.restoredCounts).map(([k, v]) => `${k}: ${v}`).join(", "),
+          })}
         </p>
-        <p className="muted footnote-tight">
-          Każde konto dostało nowe, tymczasowe hasło (oryginalne nie są przechowywane w kopii). Przekaż je
-          osobom ręcznie — ta lista zniknie po wylogowaniu, więc warto ją najpierw pobrać:
-        </p>
+        <p className="muted footnote-tight">{t("backup.newPasswordsInfo")}</p>
         <ul className="payment-list">
           {result.temporaryPasswords.map((p) => (
             <li key={p.email} className="payment-row">
@@ -104,12 +108,12 @@ export function BackupSection() {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => downloadTemporaryPasswords(result.temporaryPasswords)}
+            onClick={() => downloadTemporaryPasswords(result.temporaryPasswords, t("backup.csvHeader"))}
           >
-            Pobierz listę (CSV)
+            {t("backup.downloadCsv")}
           </button>
           <button type="button" className="btn" onClick={() => logout()}>
-            Zaloguj się ponownie
+            {t("backup.loginAgain")}
           </button>
         </div>
       </div>
@@ -118,18 +122,17 @@ export function BackupSection() {
 
   return (
     <div className="card stack-card">
-      <h2>Kopia zapasowa</h2>
+      <h2>{t("backup.title")}</h2>
       <p className="muted footnote-tight" style={{ marginTop: 0 }}>
-        Pełny eksport/import wszystkich danych do jednego pliku JSON. Hasła nigdy nie są eksportowane — po
-        imporcie każde konto dostaje nowe, tymczasowe.
+        {t("backup.description")}
       </p>
 
       <div className="form-actions">
         <a className="btn btn-secondary" href="/api/backup/export">
-          Eksportuj dane
+          {t("backup.exportData")}
         </a>
         <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-          Importuj z pliku…
+          {t("backup.importFromFile")}
         </button>
         <input
           ref={fileInputRef}
@@ -144,9 +147,9 @@ export function BackupSection() {
 
       {pendingFile && (
         <ConfirmDialog
-          title="Zastąpić wszystkie dane?"
-          message={`Import pliku "${pendingFile.name}" NIEODWRACALNIE zastąpi całą bieżącą bazę danych (dzieci, wpłaty, kategorie, konta). Zostaniesz wylogowany po zakończeniu.`}
-          confirmLabel={importing ? "Importowanie…" : "Tak, zastąp wszystko"}
+          title={t("backup.confirmTitle")}
+          message={t("backup.confirmMessage", { filename: pendingFile.name })}
+          confirmLabel={importing ? t("backup.importing") : t("backup.confirmYes")}
           onConfirm={handleConfirmImport}
           onCancel={() => {
             setPendingFile(null);

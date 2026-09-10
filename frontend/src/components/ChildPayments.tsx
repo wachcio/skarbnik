@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "./SemesterSelect";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -15,6 +16,7 @@ interface ChildPaymentsProps {
 
 export function ChildPayments({ childId }: ChildPaymentsProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.role === "ADMIN";
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [ledger, setLedger] = useState<CategoryLedgerRow[] | null>(null);
@@ -27,7 +29,7 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
     if (!selectedId) return;
     const res = await apiFetch(`/children/${childId}/ledger?semesterId=${selectedId}`);
     if (res.ok) setLedger(await res.json());
-    else setError("Nie udało się pobrać rozliczenia.");
+    else setError(t("childPayments.loadError"));
   }
 
   useEffect(() => {
@@ -48,12 +50,12 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
       setDeletingPaymentId(null);
       await loadLedger();
     } else {
-      setError("Nie udało się usunąć wpłaty.");
+      setError(t("childPayments.deleteError"));
       setDeletingPaymentId(null);
     }
   }
 
-  if (!semesters || !selectedId) return <p className="muted">Wczytywanie…</p>;
+  if (!semesters || !selectedId) return <p className="muted">{t("common.loading")}</p>;
 
   const targetTotal = ledger?.reduce((sum, row) => sum + row.target, 0) ?? 0;
   const paidTotal = ledger?.reduce((sum, row) => sum + row.paid, 0) ?? 0;
@@ -61,7 +63,7 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
   return (
     <div>
       <div className="page-header">
-        <h2>Składki</h2>
+        <h2>{t("childPayments.title")}</h2>
         <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
       </div>
 
@@ -69,11 +71,11 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
 
       {ledger && (
         <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.85rem" }}>
-          Łącznie: {currency.format(paidTotal)} / {currency.format(targetTotal)}
+          {t("childPayments.total", { paid: currency.format(paidTotal), target: currency.format(targetTotal) })}
         </p>
       )}
 
-      {ledger?.length === 0 && <p className="muted">Brak kategorii z ustaloną kwotą na ten semestr.</p>}
+      {ledger?.length === 0 && <p className="muted">{t("childPayments.empty")}</p>}
 
       <ul className="list">
         {ledger?.map((row) => (
@@ -81,7 +83,7 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
             <div className="category-item-header">
               <strong>
                 {row.categoryName}
-                {row.archived && <span className="badge-archived"> (zarchiwizowana)</span>}
+                {row.archived && <span className="badge-archived">{t("childPayments.archived")}</span>}
               </strong>
               <span
                 className={
@@ -106,7 +108,7 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
                         className="link-danger"
                         onClick={() => setDeletingPaymentId(payment.id)}
                       >
-                        Usuń
+                        {t("common.delete")}
                       </button>
                     )}
                   </li>
@@ -120,7 +122,7 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
       {isAdmin && (
         <>
           <button type="button" className="btn" onClick={() => setShowAddForm((v) => !v)} style={{ marginTop: "0.75rem" }}>
-            {showAddForm ? "Anuluj" : "Dodaj wpłatę"}
+            {showAddForm ? t("common.cancel") : t("childPayments.addPayment")}
           </button>
 
           {showAddForm && categories && (
@@ -139,9 +141,9 @@ export function ChildPayments({ childId }: ChildPaymentsProps) {
 
       {deletingPaymentId && (
         <ConfirmDialog
-          title="Usunąć wpłatę?"
-          message="Tej operacji nie można cofnąć. Wpłata zniknie z bieżących rozliczeń (zdarzenie zostanie zapisane w logu audytowym)."
-          confirmLabel="Usuń"
+          title={t("childPayments.deleteTitle")}
+          message={t("childPayments.deleteMessage")}
+          confirmLabel={t("common.delete")}
           onConfirm={() => handleDeletePayment(deletingPaymentId)}
           onCancel={() => setDeletingPaymentId(null)}
         />
@@ -158,6 +160,7 @@ interface AddPaymentFormProps {
 }
 
 function AddPaymentForm({ childId, semesterId, categories, onDone }: AddPaymentFormProps) {
+  const { t } = useLanguage();
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [paidAt, setPaidAt] = useState(() => new Date().toISOString().slice(0, 10));
@@ -176,25 +179,25 @@ function AddPaymentForm({ childId, semesterId, categories, onDone }: AddPaymentF
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się dodać wpłaty.");
+        throw new Error(body.error ?? t("childPayments.addError"));
       }
       await onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
   }
 
   if (categories.length === 0) {
-    return <p className="muted footnote-tight">Najpierw dodaj co najmniej jedną kategorię składki w ustawieniach.</p>;
+    return <p className="muted footnote-tight">{t("childPayments.noCategoriesFirst")}</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="form card form-card">
       <div className="form-row">
         <label className="field">
-          Kategoria
+          {t("childPayments.category")}
           <select className="input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -204,7 +207,7 @@ function AddPaymentForm({ childId, semesterId, categories, onDone }: AddPaymentF
           </select>
         </label>
         <label className="field">
-          Kwota
+          {t("childPayments.amount")}
           <input
             className="input"
             type="number"
@@ -217,22 +220,22 @@ function AddPaymentForm({ childId, semesterId, categories, onDone }: AddPaymentF
         </label>
       </div>
       <label className="field">
-        Data wpłaty
+        {t("childPayments.paidAt")}
         <input className="input" type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} required />
       </label>
       <label className="field">
-        Opis (opcjonalnie)
+        {t("childPayments.description")}
         <input
           className="input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="np. druga rata"
+          placeholder={t("childPayments.descriptionPlaceholder")}
         />
       </label>
       {error && <p className="error-text">{error}</p>}
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
-          {submitting ? "Zapisywanie…" : "Zapisz wpłatę"}
+          {submitting ? t("common.saving") : t("childPayments.savePayment")}
         </button>
       </div>
     </form>

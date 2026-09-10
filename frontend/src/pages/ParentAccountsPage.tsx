@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import type { Child } from "../lib/types";
 
@@ -15,6 +16,7 @@ interface ParentAccount {
 
 export function ParentAccountsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState<ParentAccount[] | null>(null);
   const [children, setChildren] = useState<Child[] | null>(null);
@@ -27,12 +29,13 @@ export function ParentAccountsPage() {
   async function load() {
     const [accountsRes, childrenRes] = await Promise.all([apiFetch("/users"), apiFetch("/children")]);
     if (accountsRes.ok) setAccounts(await accountsRes.json());
-    else setError("Nie udało się pobrać kont rodziców.");
+    else setError(t("parentAccounts.loadError"));
     if (childrenRes.ok) setChildren(await childrenRes.json());
   }
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleDelete(id: string) {
@@ -41,7 +44,7 @@ export function ParentAccountsPage() {
       setDeletingId(null);
       await load();
     } else {
-      setError("Nie udało się usunąć konta.");
+      setError(t("parentAccounts.deleteError"));
       setDeletingId(null);
     }
   }
@@ -51,13 +54,13 @@ export function ParentAccountsPage() {
   return (
     <div>
       <button type="button" className="link-back" onClick={() => navigate("/settings")}>
-        ‹ Wróć do ustawień
+        {t("parentAccounts.backToSettings")}
       </button>
 
       <div className="page-header">
-        <h1>Konta rodziców</h1>
+        <h1>{t("parentAccounts.title")}</h1>
         <button type="button" className="btn" onClick={() => setShowAddForm((v) => !v)}>
-          {showAddForm ? "Anuluj" : "Dodaj konto"}
+          {showAddForm ? t("common.cancel") : t("parentAccounts.addAccount")}
         </button>
       </div>
 
@@ -74,8 +77,8 @@ export function ParentAccountsPage() {
       )}
 
       {error && <p className="error-text">{error}</p>}
-      {accounts === null && !error && <p className="muted">Wczytywanie…</p>}
-      {accounts?.length === 0 && <p className="muted">Brak kont rodziców — dodaj pierwsze powyżej.</p>}
+      {accounts === null && !error && <p className="muted">{t("common.loading")}</p>}
+      {accounts?.length === 0 && <p className="muted">{t("parentAccounts.empty")}</p>}
 
       <ul className="list">
         {accounts?.map((account) => (
@@ -93,13 +96,13 @@ export function ParentAccountsPage() {
                   className="btn btn-secondary btn-small"
                   onClick={() => setEditingId(editingId === account.id ? null : account.id)}
                 >
-                  {editingId === account.id ? "Anuluj" : "Edytuj"}
+                  {editingId === account.id ? t("common.cancel") : t("common.edit")}
                 </button>
                 <button type="button" className="btn btn-secondary btn-small" onClick={() => setResettingId(account.id)}>
-                  Reset hasła
+                  {t("parentAccounts.resetPassword")}
                 </button>
                 <button type="button" className="btn btn-danger btn-small" onClick={() => setDeletingId(account.id)}>
-                  Usuń
+                  {t("common.delete")}
                 </button>
               </div>
             </div>
@@ -116,8 +119,10 @@ export function ParentAccountsPage() {
             ) : (
               <p className="muted footnote-tight" style={{ marginTop: 0 }}>
                 {account.children.length > 0
-                  ? `Dzieci: ${account.children.map((c) => `${c.firstName} ${c.lastName}`).join(", ")}`
-                  : "Brak przypisanych dzieci."}
+                  ? t("parentAccounts.childrenPrefix", {
+                      names: account.children.map((c) => `${c.firstName} ${c.lastName}`).join(", "),
+                    })
+                  : t("parentAccounts.noChildrenAssigned")}
               </p>
             )}
           </li>
@@ -126,9 +131,9 @@ export function ParentAccountsPage() {
 
       {deletingId && (
         <ConfirmDialog
-          title="Usunąć konto?"
-          message="Rodzic straci dostęp do panelu. Tej operacji nie można cofnąć."
-          confirmLabel="Usuń"
+          title={t("parentAccounts.deleteTitle")}
+          message={t("parentAccounts.deleteMessage")}
+          confirmLabel={t("common.delete")}
           onConfirm={() => handleDelete(deletingId)}
           onCancel={() => setDeletingId(null)}
         />
@@ -147,6 +152,7 @@ interface AddAccountFormProps {
 }
 
 function AddAccountForm({ children, onDone }: AddAccountFormProps) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -169,11 +175,11 @@ function AddAccountForm({ children, onDone }: AddAccountFormProps) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się utworzyć konta.");
+        throw new Error(body.error ?? t("parentAccounts.createError"));
       }
       await onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -182,28 +188,28 @@ function AddAccountForm({ children, onDone }: AddAccountFormProps) {
   return (
     <form onSubmit={handleSubmit} className="form">
       <label className="field">
-        Imię i nazwisko rodzica
+        {t("parentAccounts.parentName")}
         <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
       </label>
       <label className="field">
-        E-mail (login)
+        {t("parentAccounts.emailLogin")}
         <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </label>
       <label className="field">
-        Hasło początkowe
+        {t("parentAccounts.initialPassword")}
         <input
           className="input"
           type="text"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="min. 10 znaków, 3 z 4: małe/wielkie litery, cyfry, znaki specjalne"
+          placeholder={t("parentAccounts.passwordPlaceholder")}
           required
         />
       </label>
       <div className="field">
-        Dzieci
+        {t("parentAccounts.children")}
         {children.length === 0 ? (
-          <p className="muted footnote-tight">Brak dzieci w bazie — dodaj je najpierw w sekcji Dzieci.</p>
+          <p className="muted footnote-tight">{t("parentAccounts.noChildrenInDb")}</p>
         ) : (
           <div className="checkbox-list">
             {/* Posortowane po nazwisku (patrz /api/children) — "Nazwisko Imię"
@@ -224,7 +230,7 @@ function AddAccountForm({ children, onDone }: AddAccountFormProps) {
       {error && <p className="error-text">{error}</p>}
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
-          {submitting ? "Tworzenie…" : "Utwórz konto"}
+          {submitting ? t("parentAccounts.creating") : t("parentAccounts.createAccount")}
         </button>
       </div>
     </form>
@@ -238,6 +244,7 @@ interface EditAccountFormProps {
 }
 
 function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
+  const { t } = useLanguage();
   const [displayName, setDisplayName] = useState(account.displayName);
   const [childIds, setChildIds] = useState<string[]>(account.children.map((c) => c.id));
   const [error, setError] = useState<string | null>(null);
@@ -258,11 +265,11 @@ function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zapisać zmian.");
+        throw new Error(body.error ?? t("parentAccounts.saveChangesError"));
       }
       await onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -271,11 +278,11 @@ function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
   return (
     <form onSubmit={handleSubmit} className="form" style={{ marginTop: "0.75rem" }}>
       <label className="field">
-        Imię i nazwisko rodzica
+        {t("parentAccounts.parentName")}
         <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
       </label>
       <div className="field">
-        Dzieci
+        {t("parentAccounts.children")}
         <div className="checkbox-list">
           {children.map((child) => (
             <label key={child.id} className="checkbox-row">
@@ -288,7 +295,7 @@ function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
       {error && <p className="error-text">{error}</p>}
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
-          {submitting ? "Zapisywanie…" : "Zapisz zmiany"}
+          {submitting ? t("common.saving") : t("parentAccounts.saveChanges")}
         </button>
       </div>
     </form>
@@ -296,6 +303,7 @@ function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
 }
 
 function ResetPasswordDialog({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { t } = useLanguage();
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -312,11 +320,11 @@ function ResetPasswordDialog({ userId, onClose }: { userId: string; onClose: () 
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zresetować hasła.");
+        throw new Error(body.error ?? t("parentAccounts.resetError"));
       }
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -325,38 +333,36 @@ function ResetPasswordDialog({ userId, onClose }: { userId: string; onClose: () 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h2>Reset hasła</h2>
+        <h2>{t("parentAccounts.resetPasswordTitle")}</h2>
         {done ? (
           <>
-            <p className="muted">
-              Hasło zmienione. Przekaż je rodzicowi ręcznie (np. osobiście) — nie jest wysyłane e-mailem.
-            </p>
+            <p className="muted">{t("parentAccounts.resetDone")}</p>
             <div className="form-actions">
               <button type="button" className="btn" onClick={onClose}>
-                Zamknij
+                {t("common.close")}
               </button>
             </div>
           </>
         ) : (
           <form onSubmit={handleSubmit} className="form">
             <label className="field">
-              Nowe hasło
+              {t("parentAccounts.newPassword")}
               <input
                 className="input"
                 type="text"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="min. 10 znaków, 3 z 4: małe/wielkie litery, cyfry, znaki specjalne"
+                placeholder={t("parentAccounts.passwordPlaceholder")}
                 required
               />
             </label>
             {error && <p className="error-text">{error}</p>}
             <div className="form-actions">
               <button type="submit" className="btn" disabled={submitting}>
-                {submitting ? "Zapisywanie…" : "Zmień hasło"}
+                {submitting ? t("common.saving") : t("parentAccounts.changePassword")}
               </button>
               <button type="button" className="btn btn-secondary" onClick={onClose}>
-                Anuluj
+                {t("common.cancel")}
               </button>
             </div>
           </form>

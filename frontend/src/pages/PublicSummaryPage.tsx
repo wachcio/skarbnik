@@ -3,10 +3,12 @@ import { apiFetch } from "../lib/api";
 import type { SemesterSummary } from "../lib/types";
 import { AppHeader } from "../components/AppHeader";
 import { DonutChart } from "../components/DonutChart";
+import { useLanguage } from "../context/LanguageContext";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
 
 export function PublicSummaryPage() {
+  const { t } = useLanguage();
   const [summary, setSummary] = useState<SemesterSummary | null>(null);
   const [disabled, setDisabled] = useState(false);
 
@@ -29,32 +31,36 @@ export function PublicSummaryPage() {
       <AppHeader />
 
       <main className="page">
-        <h1>Stan składek grupy</h1>
+        <h1>{t("public.title")}</h1>
 
         {disabled && (
           <div className="tip-box">
             <span className="tip-icon">🔒</span>
-            <span>Widok publiczny jest obecnie wyłączony przez administratora.</span>
+            <span>{t("public.disabled")}</span>
           </div>
         )}
-        {!disabled && !summary && <p className="muted">Wczytywanie…</p>}
+        {!disabled && !summary && <p className="muted">{t("common.loading")}</p>}
 
         {summary && (
           <>
             <div className="card">
               <div className="donut-wrap">
-                <DonutChart percent={percent} caption="zebrane" color={percent >= 100 ? "var(--success)" : "var(--accent)"} />
+                <DonutChart
+                  percent={percent}
+                  caption={t("public.collectedCaption")}
+                  color={percent >= 100 ? "var(--success)" : "var(--accent)"}
+                />
                 <div className="donut-legend">
                   <div className="donut-legend-row">
-                    <span className="muted">Zebrano</span>
+                    <span className="muted">{t("public.collected")}</span>
                     <span className="value">{currency.format(summary.collectedTotal)}</span>
                   </div>
                   <div className="donut-legend-row">
-                    <span className="muted">Planowane</span>
+                    <span className="muted">{t("public.planned")}</span>
                     <span className="value">{currency.format(summary.targetTotal)}</span>
                   </div>
                   <div className="donut-legend-row">
-                    <span className="muted">Do zebrania</span>
+                    <span className="muted">{t("public.remaining")}</span>
                     <span className="value" style={{ color: remaining > 0 ? "var(--danger)" : "var(--success)" }}>
                       {currency.format(remaining)}
                     </span>
@@ -62,13 +68,15 @@ export function PublicSummaryPage() {
                 </div>
               </div>
               <p className="muted footnote-tight">
-                {summary.childCount} {summary.childCount === 1 ? "dziecko" : "dzieci"} w grupie
+                {t(summary.childCount === 1 ? "public.childCount_one" : "public.childCount_other", {
+                  count: summary.childCount,
+                })}
               </p>
             </div>
 
             {summary.byCategory.length > 0 && (
               <div className="card stack-card">
-                <h2>Wg kategorii</h2>
+                <h2>{t("public.byCategory")}</h2>
                 <ul className="category-breakdown">
                   {summary.byCategory.map((category) => {
                     const hasTarget = category.target > 0;
@@ -96,7 +104,7 @@ export function PublicSummaryPage() {
         )}
 
         <p className="muted footnote">
-          <a href="/login">Panel logowania →</a>
+          <a href="/login">{t("public.loginLink")}</a>
         </p>
       </main>
     </div>

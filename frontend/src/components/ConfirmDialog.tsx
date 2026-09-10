@@ -1,3 +1,5 @@
+import { useLanguage } from "../context/LanguageContext";
+
 interface ConfirmDialogProps {
   title: string;
   message: string;
@@ -7,6 +9,7 @@ interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCancel }: ConfirmDialogProps) {
+  const { t } = useLanguage();
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div
@@ -23,7 +26,7 @@ export function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCance
             {confirmLabel}
           </button>
           <button type="button" className="btn btn-secondary" onClick={onCancel}>
-            Anuluj
+            {t("common.cancel")}
           </button>
         </div>
       </div>

@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { apiFetch } from "../lib/api";
+import { useLanguage } from "../context/LanguageContext";
 
 /** Samodzielna zmiana własnego hasła — dostępna dla każdego zalogowanego
  * konta (admin i rodzic), w odróżnieniu od resetu hasła INNEJ osoby,
  * który robi wyłącznie admin z poziomu /users. Wymaga podania obecnego
  * hasła (patrz backend/src/routes/auth.routes.ts). */
 export function ChangePasswordSection() {
+  const { t } = useLanguage();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,7 +21,7 @@ export function ChangePasswordSection() {
     setSuccess(false);
 
     if (newPassword !== confirmPassword) {
-      setError("Nowe hasła nie są identyczne.");
+      setError(t("changePassword.mismatch"));
       return;
     }
 
@@ -31,14 +33,14 @@ export function ChangePasswordSection() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zmienić hasła.");
+        throw new Error(body.error ?? t("changePassword.error"));
       }
       setSuccess(true);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -46,13 +48,13 @@ export function ChangePasswordSection() {
 
   return (
     <div className="card stack-card">
-      <h2>Zmiana hasła</h2>
+      <h2>{t("changePassword.title")}</h2>
       <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-        Zmień hasło do swojego konta.
+        {t("changePassword.description")}
       </p>
       <form onSubmit={handleSubmit} className="form">
         <label className="field">
-          Obecne hasło
+          {t("changePassword.currentPassword")}
           <input
             className="input"
             type="password"
@@ -63,19 +65,19 @@ export function ChangePasswordSection() {
           />
         </label>
         <label className="field">
-          Nowe hasło
+          {t("changePassword.newPassword")}
           <input
             className="input"
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             autoComplete="new-password"
-            placeholder="min. 10 znaków, 3 z 4: małe/wielkie litery, cyfry, znaki specjalne"
+            placeholder={t("changePassword.newPasswordPlaceholder")}
             required
           />
         </label>
         <label className="field">
-          Powtórz nowe hasło
+          {t("changePassword.confirmPassword")}
           <input
             className="input"
             type="password"
@@ -86,10 +88,10 @@ export function ChangePasswordSection() {
           />
         </label>
         {error && <p className="error-text">{error}</p>}
-        {success && <p className="success-text">Hasło zostało zmienione.</p>}
+        {success && <p className="success-text">{t("changePassword.success")}</p>}
         <div className="form-actions">
           <button type="submit" className="btn" disabled={submitting}>
-            {submitting ? "Zapisywanie…" : "Zmień hasło"}
+            {submitting ? t("common.saving") : t("changePassword.submit")}
           </button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { apiFetch } from "../lib/api";
 import type { Settings } from "../lib/types";
 import { BackupSection } from "../components/BackupSection";
@@ -10,6 +11,7 @@ import { AppInfoFooter } from "../components/AppInfoFooter";
 
 export function SettingsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.role === "ADMIN";
   const [settings, setSettings] = useState<Settings | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,10 +33,10 @@ export function SettingsPage() {
         method: "PATCH",
         body: JSON.stringify({ publicViewEnabled: !settings.publicViewEnabled }),
       });
-      if (!res.ok) throw new Error("Nie udało się zapisać ustawienia.");
+      if (!res.ok) throw new Error(t("settings.publicViewSaveError"));
       setSettings(await res.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSaving(false);
     }
@@ -42,19 +44,19 @@ export function SettingsPage() {
 
   return (
     <div>
-      <h1>Ustawienia</h1>
+      <h1>{t("settings.title")}</h1>
       <div className="card">
         <dl className="detail-fields">
           <div>
-            <dt>Zalogowano jako</dt>
+            <dt>{t("settings.loggedInAs")}</dt>
             <dd>{user?.displayName}</dd>
           </div>
           <div>
-            <dt>Rola</dt>
-            <dd>{user?.role === "ADMIN" ? "Administrator" : "Rodzic"}</dd>
+            <dt>{t("settings.role")}</dt>
+            <dd>{user?.role === "ADMIN" ? t("settings.roleAdmin") : t("settings.roleParent")}</dd>
           </div>
           <div>
-            <dt>E-mail</dt>
+            <dt>{t("settings.email")}</dt>
             <dd>{user?.email}</dd>
           </div>
         </dl>
@@ -63,13 +65,10 @@ export function SettingsPage() {
       {isAdmin && (
         <>
           <div className="card stack-card">
-            <h2>Widok publiczny</h2>
+            <h2>{t("settings.publicViewTitle")}</h2>
             <div className="tip-box" style={{ marginBottom: "0.85rem" }}>
               <span className="tip-icon">💡</span>
-              <span>
-                Strona bez logowania z zagregowanymi danymi grupy (zebrano/planowano), dostępna pod{" "}
-                <Link to="/public">/public</Link>. Bez żadnych danych osobowych dzieci.
-              </span>
+              <span>{t("settings.publicViewTip")}</span>
             </div>
             {error && <p className="error-text">{error}</p>}
             {settings ? (
@@ -80,42 +79,42 @@ export function SettingsPage() {
                   onChange={togglePublicView}
                   disabled={saving}
                 />
-                Widok publiczny włączony
+                {t("settings.publicViewEnabled")}
               </label>
             ) : (
-              <p className="muted">Wczytywanie…</p>
+              <p className="muted">{t("common.loading")}</p>
             )}
           </div>
 
           <div className="card stack-card">
-            <h2>Kategorie składek</h2>
+            <h2>{t("settings.categoriesTitle")}</h2>
             <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-              Dodawaj i archiwizuj kategorie, ustawiaj domyślne kwoty na semestr.
+              {t("settings.categoriesDescription")}
             </p>
             <Link to="/categories" className="btn btn-secondary">
-              Zarządzaj kategoriami
+              {t("settings.categoriesManage")}
             </Link>
           </div>
 
           <div className="card stack-card">
-            <h2>Konta rodziców</h2>
+            <h2>{t("settings.parentAccountsTitle")}</h2>
             <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-              Twórz konta, przypisuj do dzieci, resetuj hasła ręcznie.
+              {t("settings.parentAccountsDescription")}
             </p>
             <Link to="/users" className="btn btn-secondary">
-              Zarządzaj kontami
+              {t("settings.parentAccountsManage")}
             </Link>
           </div>
 
           <BackupSection />
 
           <div className="card stack-card">
-            <h2>Log audytowy</h2>
+            <h2>{t("settings.auditLogTitle")}</h2>
             <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-              Historia wszystkich zmian w appce — kto, co i kiedy zrobił.
+              {t("settings.auditLogDescription")}
             </p>
             <Link to="/audit-log" className="btn btn-secondary">
-              Zobacz log
+              {t("settings.auditLogView")}
             </Link>
           </div>
         </>

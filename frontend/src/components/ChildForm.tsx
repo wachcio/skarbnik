@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 export interface ChildInput {
   firstName: string;
@@ -16,6 +17,7 @@ interface ChildFormProps {
 }
 
 export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFormProps) {
+  const { t } = useLanguage();
   const [firstName, setFirstName] = useState(initial?.firstName ?? "");
   const [lastName, setLastName] = useState(initial?.lastName ?? "");
   const [parentContactEmail, setParentContactEmail] = useState(initial?.parentContactEmail ?? "");
@@ -31,7 +33,7 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
     try {
       await onSubmit({ firstName, lastName, parentContactEmail, parentContactPhone, notes });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd.");
+      setError(err instanceof Error ? err.message : t("childForm.unexpectedError"));
     } finally {
       setSubmitting(false);
     }
@@ -41,7 +43,7 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
     <form onSubmit={handleSubmit} className="form">
       <div className="form-row">
         <label className="field">
-          Imię
+          {t("childForm.firstName")}
           <input
             className="input"
             value={firstName}
@@ -50,7 +52,7 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
           />
         </label>
         <label className="field">
-          Nazwisko
+          {t("childForm.lastName")}
           <input
             className="input"
             value={lastName}
@@ -60,7 +62,7 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
         </label>
       </div>
       <label className="field">
-        E-mail rodzica (opcjonalnie)
+        {t("childForm.parentEmail")}
         <input
           className="input"
           type="email"
@@ -69,7 +71,7 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
         />
       </label>
       <label className="field">
-        Telefon do rodzica (opcjonalnie)
+        {t("childForm.parentPhone")}
         <input
           className="input"
           value={parentContactPhone}
@@ -77,13 +79,13 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
         />
       </label>
       <label className="field">
-        Notatki
+        {t("childForm.notes")}
         <textarea
           className="input"
           rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="np. zniżka rodzeństwo, płaci przelewem zbiorczym…"
+          placeholder={t("childForm.notesPlaceholder")}
         />
       </label>
 
@@ -91,11 +93,11 @@ export function ChildForm({ initial, submitLabel, onSubmit, onCancel }: ChildFor
 
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
-          {submitting ? "Zapisywanie…" : submitLabel}
+          {submitting ? t("common.saving") : submitLabel}
         </button>
         {onCancel && (
           <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={submitting}>
-            Anuluj
+            {t("common.cancel")}
           </button>
         )}
       </div>

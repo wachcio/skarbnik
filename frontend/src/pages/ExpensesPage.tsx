@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "../components/SemesterSelect";
 import { ExpenseForm, type ExpenseInput } from "../components/ExpenseForm";
@@ -13,6 +14,7 @@ const dateFormatter = new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium" });
 
 export function ExpensesPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [categories, setCategories] = useState<Category[] | null>(null);
@@ -25,7 +27,7 @@ export function ExpensesPage() {
     if (!selectedId) return;
     const res = await apiFetch(`/expenses?semesterId=${selectedId}`);
     if (res.ok) setExpenses(await res.json());
-    else setError("Nie udało się pobrać wydatków.");
+    else setError(t("expenses.loadError"));
   }
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function ExpensesPage() {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.error ?? "Nie udało się dodać wydatku.");
+      throw new Error(body.error ?? t("expenses.addError"));
     }
     setShowAddForm(false);
     await loadExpenses();
@@ -60,7 +62,7 @@ export function ExpensesPage() {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.error ?? "Nie udało się zapisać zmian.");
+      throw new Error(body.error ?? t("expenses.saveError"));
     }
     setEditingId(null);
     await loadExpenses();
@@ -72,13 +74,13 @@ export function ExpensesPage() {
       setDeletingId(null);
       await loadExpenses();
     } else {
-      setError("Nie udało się usunąć wydatku.");
+      setError(t("expenses.deleteError"));
       setDeletingId(null);
     }
   }
 
   if (user?.role !== "ADMIN") return <Navigate to="/settings" replace />;
-  if (!semesters || !selectedId) return <p className="muted">Wczytywanie…</p>;
+  if (!semesters || !selectedId) return <p className="muted">{t("common.loading")}</p>;
 
   const activeCategories = categories?.filter((c) => !c.archived) ?? [];
   const total = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
@@ -86,22 +88,24 @@ export function ExpensesPage() {
   return (
     <div>
       <div className="page-header">
-        <h1>Wydatki</h1>
+        <h1>{t("expenses.title")}</h1>
         <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
       </div>
 
       <button type="button" className="btn" onClick={() => setShowAddForm((v) => !v)} style={{ marginBottom: "1rem" }}>
-        {showAddForm ? "Anuluj" : "Dodaj wydatek"}
+        {showAddForm ? t("common.cancel") : t("expenses.addExpense")}
       </button>
 
-      {showAddForm && categories && <ExpenseForm categories={activeCategories} submitLabel="Zapisz wydatek" onSubmit={handleCreate} />}
+      {showAddForm && categories && (
+        <ExpenseForm categories={activeCategories} submitLabel={t("expenses.saveExpense")} onSubmit={handleCreate} />
+      )}
 
       {error && <p className="error-text">{error}</p>}
-      {expenses === null && !error && <p className="muted">Wczytywanie…</p>}
-      {expenses?.length === 0 && <p className="muted">Brak wydatków w tym semestrze — dodaj pierwszy powyżej.</p>}
+      {expenses === null && !error && <p className="muted">{t("common.loading")}</p>}
+      {expenses?.length === 0 && <p className="muted">{t("expenses.empty")}</p>}
 
       {expenses && expenses.length > 0 && (
-        <p className="muted footnote-tight">Łącznie wydano w tym semestrze: {currency.format(total)}</p>
+        <p className="muted footnote-tight">{t("expenses.totalThisSemester", { total: currency.format(total) })}</p>
       )}
 
       <ul className="list stack-card">
@@ -116,7 +120,7 @@ export function ExpensesPage() {
                   spentAt: expense.spentAt.slice(0, 10),
                   description: expense.description ?? "",
                 }}
-                submitLabel="Zapisz zmiany"
+                submitLabel={t("expenses.saveChanges")}
                 onSubmit={(data) => handleUpdate(expense.id, data)}
                 onCancel={() => setEditingId(null)}
               />
@@ -126,7 +130,7 @@ export function ExpensesPage() {
               <div className="category-item-header">
                 <div>
                   <strong>{expense.category.name}</strong>
-                  {expense.category.archived && <span className="badge-archived"> (zarchiwizowana)</span>}
+                  {expense.category.archived && <span className="badge-archived">{t("reports.archived")}</span>}
                   <div className="muted footnote-tight" style={{ marginTop: "0.15rem" }}>
                     {dateFormatter.format(new Date(expense.spentAt))}
                     {expense.description ? ` · ${expense.description}` : ""}
@@ -136,10 +140,10 @@ export function ExpensesPage() {
               </div>
               <div className="button-group">
                 <button type="button" className="btn btn-secondary btn-small" onClick={() => setEditingId(expense.id)}>
-                  Edytuj
+                  {t("common.edit")}
                 </button>
                 <button type="button" className="btn btn-danger btn-small" onClick={() => setDeletingId(expense.id)}>
-                  Usuń
+                  {t("common.delete")}
                 </button>
               </div>
             </li>
@@ -149,9 +153,9 @@ export function ExpensesPage() {
 
       {deletingId && (
         <ConfirmDialog
-          title="Usunąć wydatek?"
-          message="Tej operacji nie można cofnąć. Zdarzenie zostanie zapisane w logu audytowym."
-          confirmLabel="Usuń"
+          title={t("expenses.deleteTitle")}
+          message={t("expenses.deleteMessage")}
+          confirmLabel={t("common.delete")}
           onConfirm={() => handleDelete(deletingId)}
           onCancel={() => setDeletingId(null)}
         />

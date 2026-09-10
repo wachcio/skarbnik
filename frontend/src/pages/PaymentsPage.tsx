@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "../components/SemesterSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -21,6 +22,7 @@ interface PaymentWithRelations {
 
 export function PaymentsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.role === "ADMIN";
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [payments, setPayments] = useState<PaymentWithRelations[] | null>(null);
@@ -34,7 +36,7 @@ export function PaymentsPage() {
     if (!selectedId) return;
     const res = await apiFetch(`/payments?semesterId=${selectedId}`);
     if (res.ok) setPayments(await res.json());
-    else setError("Nie udało się pobrać wpłat.");
+    else setError(t("payments.loadError"));
   }
 
   useEffect(() => {
@@ -58,26 +60,26 @@ export function PaymentsPage() {
       setDeletingId(null);
       await loadPayments();
     } else {
-      setError("Nie udało się usunąć wpłaty.");
+      setError(t("payments.deleteError"));
       setDeletingId(null);
     }
   }
 
-  if (!semesters || !selectedId) return <p className="muted">Wczytywanie…</p>;
+  if (!semesters || !selectedId) return <p className="muted">{t("common.loading")}</p>;
 
   const total = payments?.reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
 
   return (
     <div>
       <div className="page-header">
-        <h1>Wpłaty</h1>
+        <h1>{t("payments.title")}</h1>
         <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
       </div>
 
       {isAdmin && (
         <>
           <button type="button" className="btn" onClick={() => setShowAddForm((v) => !v)} style={{ marginBottom: "1rem" }}>
-            {showAddForm ? "Anuluj" : "Dodaj wpłatę"}
+            {showAddForm ? t("common.cancel") : t("childPayments.addPayment")}
           </button>
           {showAddForm && children && categories && (
             <AddPaymentForm
@@ -94,15 +96,13 @@ export function PaymentsPage() {
       )}
 
       {error && <p className="error-text">{error}</p>}
-      {payments === null && !error && <p className="muted">Wczytywanie…</p>}
+      {payments === null && !error && <p className="muted">{t("common.loading")}</p>}
       {payments?.length === 0 && (
-        <p className="muted">
-          {isAdmin ? "Brak wpłat w tym semestrze — dodaj pierwszą powyżej." : "Brak wpłat Twojego dziecka w tym semestrze."}
-        </p>
+        <p className="muted">{isAdmin ? t("payments.emptyAdmin") : t("payments.emptyParent")}</p>
       )}
 
       {payments && payments.length > 0 && (
-        <p className="muted footnote-tight">Łącznie w tym semestrze: {currency.format(total)}</p>
+        <p className="muted footnote-tight">{t("payments.totalThisSemester", { total: currency.format(total) })}</p>
       )}
 
       <ul className="list stack-card">
@@ -117,7 +117,7 @@ export function PaymentsPage() {
                 </Link>
                 <div className="muted footnote-tight" style={{ marginTop: "0.15rem" }}>
                   {p.category.name}
-                  {p.category.archived && <span className="badge-archived"> (zarchiwizowana)</span>}
+                  {p.category.archived && <span className="badge-archived">{t("reports.archived")}</span>}
                 </div>
               </div>
               <span className="amount-paid">{currency.format(Number(p.amount))}</span>
@@ -128,7 +128,7 @@ export function PaymentsPage() {
             </p>
             {isAdmin && (
               <button type="button" className="link-danger" onClick={() => setDeletingId(p.id)}>
-                Usuń
+                {t("common.delete")}
               </button>
             )}
           </li>
@@ -137,9 +137,9 @@ export function PaymentsPage() {
 
       {deletingId && (
         <ConfirmDialog
-          title="Usunąć wpłatę?"
-          message="Tej operacji nie można cofnąć. Zdarzenie zostanie zapisane w logu audytowym."
-          confirmLabel="Usuń"
+          title={t("payments.deleteTitle")}
+          message={t("payments.deleteMessage")}
+          confirmLabel={t("common.delete")}
           onConfirm={() => handleDelete(deletingId)}
           onCancel={() => setDeletingId(null)}
         />
@@ -156,6 +156,7 @@ interface AddPaymentFormProps {
 }
 
 function AddPaymentForm({ children, categories, semesterId, onDone }: AddPaymentFormProps) {
+  const { t } = useLanguage();
   const [childId, setChildId] = useState(children[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [amount, setAmount] = useState("");
@@ -175,28 +176,28 @@ function AddPaymentForm({ children, categories, semesterId, onDone }: AddPayment
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się dodać wpłaty.");
+        throw new Error(body.error ?? t("childPayments.addError"));
       }
       await onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
   }
 
   if (children.length === 0) {
-    return <p className="muted footnote-tight">Najpierw dodaj dziecko w sekcji Dzieci.</p>;
+    return <p className="muted footnote-tight">{t("payments.noChildrenFirst")}</p>;
   }
   if (categories.length === 0) {
-    return <p className="muted footnote-tight">Najpierw dodaj co najmniej jedną kategorię składki w ustawieniach.</p>;
+    return <p className="muted footnote-tight">{t("payments.noCategoriesFirst")}</p>;
   }
 
   return (
     <form onSubmit={handleSubmit} className="form card form-card">
       <div className="form-row">
         <label className="field">
-          Dziecko
+          {t("payments.child")}
           {/* Lista dzieci przychodzi posortowana po nazwisku — "Nazwisko Imię",
               żeby łatwo było znaleźć kogoś przy przewijaniu długiej listy. */}
           <select className="input" value={childId} onChange={(e) => setChildId(e.target.value)}>
@@ -208,7 +209,7 @@ function AddPaymentForm({ children, categories, semesterId, onDone }: AddPayment
           </select>
         </label>
         <label className="field">
-          Kategoria
+          {t("childPayments.category")}
           <select className="input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -220,7 +221,7 @@ function AddPaymentForm({ children, categories, semesterId, onDone }: AddPayment
       </div>
       <div className="form-row">
         <label className="field">
-          Kwota
+          {t("childPayments.amount")}
           <input
             className="input"
             type="number"
@@ -232,23 +233,23 @@ function AddPaymentForm({ children, categories, semesterId, onDone }: AddPayment
           />
         </label>
         <label className="field">
-          Data wpłaty
+          {t("childPayments.paidAt")}
           <input className="input" type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} required />
         </label>
       </div>
       <label className="field">
-        Opis (opcjonalnie)
+        {t("childPayments.description")}
         <input
           className="input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="np. druga rata"
+          placeholder={t("childPayments.descriptionPlaceholder")}
         />
       </label>
       {error && <p className="error-text">{error}</p>}
       <div className="form-actions">
         <button type="submit" className="btn" disabled={submitting}>
-          {submitting ? "Zapisywanie…" : "Zapisz wpłatę"}
+          {submitting ? t("common.saving") : t("childPayments.savePayment")}
         </button>
       </div>
     </form>

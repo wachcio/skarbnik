@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 /** Samodzielna zmiana własnego e-maila (login) — dostępna dla każdego
  * zalogowanego konta, na tych samych zasadach co zmiana hasła: wymaga
  * podania obecnego hasła (patrz backend/src/routes/auth.routes.ts). */
 export function ChangeEmailSection() {
   const { user, refreshUser } = useAuth();
+  const { t } = useLanguage();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +28,14 @@ export function ChangeEmailSection() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zmienić e-maila.");
+        throw new Error(body.error ?? t("changeEmail.error"));
       }
       await refreshUser();
       setSuccess(true);
       setCurrentPassword("");
       setNewEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -41,13 +43,13 @@ export function ChangeEmailSection() {
 
   return (
     <div className="card stack-card">
-      <h2>Zmiana e-maila</h2>
+      <h2>{t("changeEmail.title")}</h2>
       <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-        Obecny e-mail (login): {user?.email}
+        {t("changeEmail.currentEmail", { email: user?.email ?? "" })}
       </p>
       <form onSubmit={handleSubmit} className="form">
         <label className="field">
-          Obecne hasło
+          {t("changeEmail.currentPassword")}
           <input
             className="input"
             type="password"
@@ -58,7 +60,7 @@ export function ChangeEmailSection() {
           />
         </label>
         <label className="field">
-          Nowy e-mail
+          {t("changeEmail.newEmail")}
           <input
             className="input"
             type="email"
@@ -69,10 +71,10 @@ export function ChangeEmailSection() {
           />
         </label>
         {error && <p className="error-text">{error}</p>}
-        {success && <p className="success-text">E-mail został zmieniony.</p>}
+        {success && <p className="success-text">{t("changeEmail.success")}</p>}
         <div className="form-actions">
           <button type="submit" className="btn" disabled={submitting}>
-            {submitting ? "Zapisywanie…" : "Zmień e-mail"}
+            {submitting ? t("common.saving") : t("changeEmail.submit")}
           </button>
         </div>
       </form>

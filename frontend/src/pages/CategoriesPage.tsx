@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import type { Category } from "../lib/types";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "../components/SemesterSelect";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -11,6 +12,7 @@ const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "
 
 export function CategoriesPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [categories, setCategories] = useState<Category[] | null>(null);
@@ -27,11 +29,12 @@ export function CategoriesPage() {
   async function load() {
     const res = await apiFetch("/categories");
     if (res.ok) setCategories(await res.json());
-    else setError("Nie udało się pobrać kategorii.");
+    else setError(t("categories.loadError"));
   }
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function targetFor(category: Category): number {
@@ -52,12 +55,12 @@ export function CategoriesPage() {
       const res = await apiFetch("/categories", { method: "POST", body: JSON.stringify({ name: newName }) });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się dodać kategorii.");
+        throw new Error(body.error ?? t("categories.addError"));
       }
       setNewName("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setCreating(false);
     }
@@ -79,12 +82,12 @@ export function CategoriesPage() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zapisać nazwy.");
+        throw new Error(body.error ?? t("categories.saveNameError"));
       }
       setEditingNameId(null);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSavingName(false);
     }
@@ -96,7 +99,7 @@ export function CategoriesPage() {
       setArchivingId(null);
       await load();
     } else {
-      setError("Nie udało się zarchiwizować kategorii.");
+      setError(t("categories.archiveError"));
       setArchivingId(null);
     }
   }
@@ -113,7 +116,7 @@ export function CategoriesPage() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Nie udało się zapisać kwoty.");
+        throw new Error(body.error ?? t("categories.saveAmountError"));
       }
       await load();
       setAmountDrafts((prev) => {
@@ -122,7 +125,7 @@ export function CategoriesPage() {
         return next;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Wystąpił błąd.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setSavingAmountFor(null);
     }
@@ -133,11 +136,11 @@ export function CategoriesPage() {
   return (
     <div>
       <button type="button" className="link-back" onClick={() => navigate("/settings")}>
-        ‹ Wróć do ustawień
+        {t("categories.backToSettings")}
       </button>
 
       <div className="page-header">
-        <h1>Kategorie składek</h1>
+        <h1>{t("categories.title")}</h1>
         {semesters && selectedId && (
           <SemesterSelect semesters={semesters} value={selectedId} onChange={setSelectedId} />
         )}
@@ -145,23 +148,23 @@ export function CategoriesPage() {
 
       <form onSubmit={handleCreate} className="form-row inline-form">
         <label className="field" style={{ flex: "1 1 220px" }}>
-          Nowa kategoria
+          {t("categories.newCategory")}
           <input
             className="input"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="np. Wycieczka do ZOO"
+            placeholder={t("categories.newCategoryPlaceholder")}
             required
           />
         </label>
         <button type="submit" className="btn" disabled={creating} style={{ alignSelf: "flex-end" }}>
-          {creating ? "Dodawanie…" : "Dodaj"}
+          {creating ? t("categories.adding") : t("categories.add")}
         </button>
       </form>
 
       {error && <p className="error-text">{error}</p>}
-      {categories === null && !error && <p className="muted">Wczytywanie…</p>}
-      {categories?.length === 0 && <p className="muted">Brak kategorii — dodaj pierwszą powyżej.</p>}
+      {categories === null && !error && <p className="muted">{t("common.loading")}</p>}
+      {categories?.length === 0 && <p className="muted">{t("categories.empty")}</p>}
 
       <ul className="list stack-card">
         {categories?.map((category) => (
@@ -181,7 +184,7 @@ export function CategoriesPage() {
                     disabled={savingName}
                     onClick={() => handleSaveName(category.id)}
                   >
-                    Zapisz
+                    {t("common.save")}
                   </button>
                   <button
                     type="button"
@@ -189,7 +192,7 @@ export function CategoriesPage() {
                     disabled={savingName}
                     onClick={() => setEditingNameId(null)}
                   >
-                    Anuluj
+                    {t("common.cancel")}
                   </button>
                 </div>
               ) : (
@@ -202,7 +205,7 @@ export function CategoriesPage() {
                     className="btn btn-secondary btn-small"
                     onClick={() => startEditingName(category)}
                   >
-                    Zmień nazwę
+                    {t("categories.rename")}
                   </button>
                 )}
                 <button
@@ -210,12 +213,14 @@ export function CategoriesPage() {
                   className="btn btn-danger btn-small"
                   onClick={() => setArchivingId(category.id)}
                 >
-                  Archiwizuj
+                  {t("categories.archive")}
                 </button>
               </div>
             </div>
             <label className="field">
-              Kwota domyślna na {semesters?.find((s) => s.id === selectedId)?.label ?? "wybrany semestr"}
+              {t("categories.defaultAmountFor", {
+                semester: semesters?.find((s) => s.id === selectedId)?.label ?? t("categories.selectedSemesterFallback"),
+              })}
               <div className="amount-row">
                 <input
                   className="input"
@@ -233,20 +238,20 @@ export function CategoriesPage() {
                   disabled={savingAmountFor === category.id}
                   onClick={() => handleSaveAmount(category)}
                 >
-                  Zapisz
+                  {t("common.save")}
                 </button>
               </div>
             </label>
-            <p className="muted footnote-tight">Aktualnie: {currency.format(targetFor(category))}</p>
+            <p className="muted footnote-tight">{t("categories.currently", { amount: currency.format(targetFor(category)) })}</p>
           </li>
         ))}
       </ul>
 
       {archivingId && (
         <ConfirmDialog
-          title="Zarchiwizować kategorię?"
-          message="Kategoria zniknie z listy aktywnych i nie będzie można do niej dodawać nowych wpłat. Historia dotychczasowych wpłat zostanie zachowana w raportach."
-          confirmLabel="Archiwizuj"
+          title={t("categories.archiveTitle")}
+          message={t("categories.archiveMessage")}
+          confirmLabel={t("categories.archive")}
           onConfirm={() => handleArchive(archivingId)}
           onCancel={() => setArchivingId(null)}
         />
