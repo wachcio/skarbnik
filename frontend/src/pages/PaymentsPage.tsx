@@ -197,10 +197,12 @@ function AddPaymentForm({ children, categories, semesterId, onDone }: AddPayment
       <div className="form-row">
         <label className="field">
           Dziecko
+          {/* Lista dzieci przychodzi posortowana po nazwisku — "Nazwisko Imię",
+              żeby łatwo było znaleźć kogoś przy przewijaniu długiej listy. */}
           <select className="input" value={childId} onChange={(e) => setChildId(e.target.value)}>
             {children.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.firstName} {c.lastName}
+                {c.lastName} {c.firstName}
               </option>
             ))}
           </select>

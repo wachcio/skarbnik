@@ -145,7 +145,10 @@ export async function getArrears(semesterId: string): Promise<ArrearsRow[]> {
       if (remaining > 0) {
         rows.push({
           childId: child.id,
-          childName: `${child.firstName} ${child.lastName}`,
+          // Wiersze są posortowane po nazwisku (patrz orderBy wyżej) —
+          // "Nazwisko Imię", nie "Imię Nazwisko", inaczej alfabetyczny
+          // porządek nie byłby widoczny na liście dzieci w raporcie.
+          childName: `${child.lastName} ${child.firstName}`,
           categoryId: category.id,
           categoryName: category.name,
           target,

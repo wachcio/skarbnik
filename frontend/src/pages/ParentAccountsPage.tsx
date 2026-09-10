@@ -206,6 +206,8 @@ function AddAccountForm({ children, onDone }: AddAccountFormProps) {
           <p className="muted footnote-tight">Brak dzieci w bazie — dodaj je najpierw w sekcji Dzieci.</p>
         ) : (
           <div className="checkbox-list">
+            {/* Posortowane po nazwisku (patrz /api/children) — "Nazwisko Imię"
+                zamiast "Imię Nazwisko", żeby ten porządek było widać. */}
             {children.map((child) => (
               <label key={child.id} className="checkbox-row">
                 <input
@@ -213,7 +215,7 @@ function AddAccountForm({ children, onDone }: AddAccountFormProps) {
                   checked={childIds.includes(child.id)}
                   onChange={() => toggleChild(child.id)}
                 />
-                {child.firstName} {child.lastName}
+                {child.lastName} {child.firstName}
               </label>
             ))}
           </div>
@@ -278,7 +280,7 @@ function EditAccountForm({ account, children, onDone }: EditAccountFormProps) {
           {children.map((child) => (
             <label key={child.id} className="checkbox-row">
               <input type="checkbox" checked={childIds.includes(child.id)} onChange={() => toggleChild(child.id)} />
-              {child.firstName} {child.lastName}
+              {child.lastName} {child.firstName}
             </label>
           ))}
         </div>

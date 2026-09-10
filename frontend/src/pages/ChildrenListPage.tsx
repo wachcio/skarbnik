@@ -66,8 +66,12 @@ export function ChildrenListPage() {
         {children?.map((child) => (
           <li key={child.id}>
             <Link to={`/children/${child.id}`} className="list-row">
+              {/* Lista jest posortowana po nazwisku (patrz backend) — wyświetlamy
+                  więc "Nazwisko Imię", inaczej alfabetyczny porządek byłby
+                  niewidoczny na pierwszy rzut oka (imiona idą w przypadkowej
+                  kolejności). */}
               <span className="list-row-title">
-                {child.firstName} {child.lastName}
+                {child.lastName} {child.firstName}
               </span>
               <span className="list-row-chevron" aria-hidden="true">
                 ›
