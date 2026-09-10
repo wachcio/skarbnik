@@ -318,6 +318,34 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (17) — Odzyskiwanie hasła administratora (komenda serwerowa)
+- Poprzedni wpis dotyczył zmiany WŁASNEGO hasła ze znajomością obecnego —
+  ten dotyczy scenariusza "zapomniałem hasła". Użytkownik poproszony o
+  wybór między trzema podejściami (kod odzyskiwania w appce / e-mail z
+  linkiem / komenda serwerowa) wybrał **komendę serwerową** — świadomie
+  najbezpieczniejszą: nie dodaje żadnego nowego, publicznie dostępnego
+  mechanizmu do appki (żadnej nowej tajemnicy do przechowania, żadnego
+  nowego formularza na ekranie logowania), tylko wykorzystuje już
+  istniejący próg zaufania — dostęp SSH/Docker do serwera.
+- `docker compose exec backend npm run admin:reset-password` — pyta o
+  e-mail i nowe hasło interaktywnie (hasło niewidoczne, własny minimalny
+  czytnik stdin bez zależności), działa wyłącznie na kontach ADMIN,
+  zeruje blokadę logowania i wylogowuje wszystkie aktywne sesje konta.
+  Skrypt w `backend/src/scripts/`, kompilowany do `dist/` (Docker kopiuje
+  tylko `dist/`, nie `src/` — stąd `admin:reset-password` uruchamia
+  skompilowaną wersję, a `admin:reset-password:dev` przez `tsx`
+  bezpośrednio na źródle, do lokalnego developmentu).
+- Złapany i naprawiony bug we własnej pierwszej wersji: osobny listener
+  `stdin` na każde pytanie gubił dane, gdy e-mail+hasła przychodziły w
+  jednym fragmencie (typowe przy testach) — listener na kolejne pytanie
+  powstawał już po tym, jak dane do niego dotarły. Naprawione jednym
+  trwałym czytnikiem znaków żyjącym przez cały czas skryptu.
+- **Zweryfikowane** na żywym Dockerze+MySQL dokładnie tak, jak będzie
+  używane w produkcji (`docker exec` na zbudowanym obrazie): nieznany
+  e-mail, konto rodzica (odrzucone), pełny sukces z retry na słabym
+  haśle i niezgodnym powtórzeniu, a po resecie: stara sesja faktycznie
+  wylogowana (401), stare hasło odrzucone, nowe działa.
+
 ### 2026-09-10 (16) — Samodzielna zmiana hasła w Ustawieniach
 - Skarbnik (i rodzic — endpoint jest rolo-agnostyczny, więc nie było
   powodu tego sztucznie blokować) może zmienić własne hasło z panelu
