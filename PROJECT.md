@@ -318,6 +318,13 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (20) — Kolejność sekcji w Ustawieniach
+- Zmiana e-maila i Zmiana hasła (dotyczą własnego konta) przeniesione
+  na sam koniec listy sekcji — za Widokiem publicznym, Kategoriami,
+  Kontami rodziców i Kopią zapasową dla admina (dla rodzica, który ma
+  tylko te dwie sekcje, i tak lądują na końcu jego krótszej listy).
+  Zweryfikowane Playwrightem: kolejność nagłówków sprawdzona dla obu ról.
+
 ### 2026-09-10 (19) — Samodzielna zmiana e-maila w Ustawieniach
 - Użytkownik zapytał, jak zmienić e-mail admina — appka nie miała na to
   żadnej drogi. Ten sam wzorzec co zmiana hasła (poprzedni wpis): nowy
