@@ -51,7 +51,33 @@ docker compose run --rm --entrypoint sh certbot -c "\
     -subj '/CN=localhost'"
 
 echo "### Startuję nginx z tymczasowym certyfikatem ###"
-docker compose up -d nginx
+# --force-recreate: jeśli nginx już wcześniej istniał (np. z poprzedniej,
+# nieudanej próby) i utknął w pętli restartów albo ma nieświeży stan sieci
+# Dockera, zwykłe "up -d" by go nie tknęło — potrzebny jest naprawdę świeży
+# kontener (zweryfikowane: to realnie się zdarzyło i --force-recreate to
+# naprawiało).
+docker compose up -d --force-recreate nginx
+
+echo "### Czekam, aż nginx faktycznie zacznie odpowiadać na porcie 80 ###"
+# Bez tego kroku dalsza część skryptu (usunięcie dummy certu + prośba do
+# Let's Encrypt) mogła ruszyć, zanim nginx zdążył wstać — certbot dostawał
+# wtedy "Connection refused", bo port 80 jeszcze nie żył (zweryfikowane na
+# żywym wdrożeniu: to realnie się zdarzało, mimo że kontener wg
+# `docker compose up` zdążył się już "Started").
+ready=false
+for _ in $(seq 1 30); do
+  code="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/" || true)"
+  if [ -n "$code" ] && [ "$code" != "000" ]; then
+    ready=true
+    break
+  fi
+  sleep 1
+done
+if [ "$ready" != "true" ]; then
+  echo "nginx nie odpowiedział na porcie 80 w ciągu 30s." >&2
+  echo "Sprawdź: docker compose ps oraz docker compose logs nginx --tail 50" >&2
+  exit 1
+fi
 
 echo "### Usuwam tymczasowy certyfikat ###"
 docker compose run --rm --entrypoint sh certbot -c "\
