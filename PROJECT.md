@@ -334,6 +334,42 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
   dla admina i rodzica, oba motywy.
 
+### 2026-09-11 (31) — Automatyczny reload nginksa po odnowieniu certyfikatu
+- Użytkownik zapytał, czy certyfikat będzie się sam odnawiał — odpowiedź
+  ujawniła realną lukę: `certbot` co 12h faktycznie podmienia plik
+  certyfikatu na dysku, ale nginx trzyma go wczytany w pamięci procesu
+  i nigdy sam z siebie nie zauważy podmiany bez `nginx -s reload`. Bez
+  naprawy: certyfikat odnowiłby się "cicho" na dysku za ~60 dni, a
+  przeglądarki i tak dostawałyby stary, wygasający certyfikat.
+- `certbot` nie może bezpiecznie wywołać reloadu w INNYM kontenerze
+  (wymagałoby zamontowania mu gniazda Dockera — realnie pełny dostęp
+  roota do hosta, nieproporcjonalne ryzyko dla samego przeładowania
+  configu). Zamiast tego nginx przeładowuje SAM SIEBIE co 12h w tle
+  (reload jest tani i nie zrywa połączeń, więc robimy to bezwarunkowo).
+- **Pierwsza wersja naprawy miała realny błąd, złapany dopiero przy
+  testowaniu, nie przy czytaniu kodu**: `command: sh -c "... & exec
+  nginx ..."` na usłudze `nginx` wyglądało niewinnie, ale oficjalny
+  `/docker-entrypoint.sh` obrazu `nginx:alpine` uruchamia CAŁĄ
+  konfigurację startową (w tym renderowanie szablonu przez envsubst)
+  TYLKO gdy pierwszy argument polecenia to dosłownie `"nginx"` —
+  podmiana na `"sh"` cicho pomijała ten krok. Nginx startował bez
+  żadnego błędu i przechodził nawet `nginx -t`, ale z pustym
+  `conf.d` nie nasłuchiwał na ŻADNYM porcie (potwierdzone: `ss`
+  wewnątrz kontenera pokazywał tylko wewnętrzny DNS Dockera,
+  a kontener z tej samej sieci dostawał "connection refused").
+  Naprawione przez podmianę `entrypoint:` (nie `command:`) na nowy
+  `deploy/nginx/reload-entrypoint.sh`, który wprost odtwarza tę samą
+  pętlę po `/docker-entrypoint.d/*.sh`/`*.envsh` co oryginalny skrypt
+  (zweryfikowaną bezpośrednio w treści skryptu z obrazu), zanim
+  odpali w tle pętlę reloadu i wystartuje właściwego nginksa.
+- **Zweryfikowane** na pełnym Dockerze+MySQL: `app.conf` znów renderuje
+  się poprawnie i appka odpowiada; `nginx -s reload` nie przerywa
+  działania appki; `docker stop` zatrzymuje kontener czysto i szybko
+  (PID 1 to wciąż prawdziwy proces nginksa, poprawna obsługa sygnału);
+  podmieniony na dysku certyfikat jest faktycznie serwowany dopiero PO
+  `nginx -s reload` (potwierdzone bezpośrednio przez realny handshake
+  TLS, nie tylko przez to, że appka nadal odpowiada).
+
 ### 2026-09-10/11 (30) — Poprawki po pierwszym realnym wdrożeniu na VPS OVH
 - Pierwsze prawdziwe uruchomienie `init-letsencrypt.sh` na produkcyjnym
   VPS-ie (`skarbnik.wachcio.pl`, OVH) ujawniło dwie rzeczy, których nie
