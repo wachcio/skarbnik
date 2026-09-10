@@ -1,0 +1,68 @@
+# Szablon konfiguracji nginx — samodzielny reverse proxy zastępujący NGINX
+# Proxy Managera, gdy nie chcesz stawiać jego panelu graficznego (np. VPS
+# bez GUI). ${APP_DOMAIN} podstawia oficjalny obraz nginx:alpine przy
+# starcie kontenera (mechanizm envsubst na plikach w /etc/nginx/templates,
+# patrz docker-entrypoint.d w obrazie) — reszta znaków `$` w tym pliku to
+# zmienne nginksa ($host, $remote_addr, ...), nietykane przez ten mechanizm,
+# bo nie są ustawione jako zmienne środowiskowe kontenera.
+#
+# Odpowiednik tego, co w wariancie z NGINX Proxy Managerem robi Proxy Host +
+# Custom Location "/api" -> backend:4000 (patrz README.md).
+
+server {
+    listen 80;
+    server_name ${APP_DOMAIN};
+
+    # Wymagane przez certbota (walidacja HTTP-01) — patrz
+    # deploy/nginx/init-letsencrypt.sh.
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${APP_DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${APP_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${APP_DOMAIN}/privkey.pem;
+
+    # Zestaw TLS "intermediate" wg Mozilla SSL Configuration Generator,
+    # ograniczony do szyfrów ECDHE (bez DHE), żeby nie wymagać osobnego
+    # pliku ssl_dhparam — wpisane wprost tutaj zamiast pobierania z
+    # zewnętrznego źródła przy starcie, żeby nie zależeć od dostępności
+    # i układu katalogów cudzego repozytorium.
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_prefer_server_ciphers off;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:MozSSL:10m;
+    ssl_session_tickets off;
+
+    # Import kopii zapasowej (JSON) może być większy niż domyślny 1m —
+    # backend i tak ogranicza do 5mb (patrz backend/src/app.ts), więc tu
+    # dajemy trochę zapasu.
+    client_max_body_size 10m;
+
+    # Musi być PRZED "location /", bo obie zaczynają się od "/", a nginx
+    # dopasowuje najdłuższy pasujący prefiks.
+    location /api/ {
+        proxy_pass http://backend:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://frontend:5173;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

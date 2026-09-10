@@ -34,6 +34,43 @@ istnieje.
 
 Logowanie: `ADMIN_EMAIL` / `ADMIN_PASSWORD` z `.env` (utworzone przez seed).
 
+## Wdrożenie na VPS bez NGINX Proxy Managera
+
+Jeśli nie stawiasz NPM (np. samodzielny VPS OVH), w repo jest gotowy,
+lekki reverse proxy — zwykły `nginx` + `certbot` w Dockerze, robiący
+dokładnie to samo co Custom Location wyżej, tylko konfigiem zamiast GUI.
+Domyślnie te usługi są **wyłączone** (nie kolidują z NPM, gdy jednak go
+używasz) — włączasz je jawnie profilem `standalone-proxy`.
+
+```bash
+cp .env.example .env
+# uzupełnij .env jak zwykle + dwie dodatkowe zmienne:
+#   APP_DOMAIN=skarbnik.twoja-domena.pl   (ta sama domena co PUBLIC_BASE_URL)
+#   LETSENCRYPT_EMAIL=ty@twoja-domena.pl
+
+# DNS: w panelu, gdzie trzymasz strefę DNS domeny (np. MyDevil), dodaj
+# rekord A wskazujący APP_DOMAIN na publiczne IP tego VPS-a — i poczekaj,
+# aż się propaguje, zanim pójdziesz dalej (certbot zweryfikuje domenę
+# przez realne połączenie z internetu na port 80).
+
+docker compose --profile standalone-proxy up -d --build
+docker compose exec backend npm run prisma:migrate:deploy
+docker compose exec backend npm run prisma:seed
+
+# JEDNORAZOWO, dopiero teraz (wymaga uruchomionych kontenerów wyżej) —
+# wystawia prawdziwy certyfikat Let's Encrypt dla APP_DOMAIN:
+./deploy/nginx/init-letsencrypt.sh
+```
+
+Od tej pory appka jest pod `https://APP_DOMAIN`, a certyfikat odnawia się
+sam (kontener `certbot` sprawdza co 12h). Firewall VPS-a (i ewentualna
+dodatkowa zapora sieciowa w panelu dostawcy, jeśli taką ma) musi przepuszczać
+porty 80 i 443 — 80 jest potrzebny na stałe, nie tylko przy pierwszym
+uzyskaniu certyfikatu (Let's Encrypt weryfikuje odnowienia tak samo).
+Portów `4000`/`5173`/`3306` nie trzeba (i nie powinno się) wystawiać
+na zewnątrz — z nimi rozmawia już tylko kontener `nginx`, po wewnętrznej
+sieci Dockera.
+
 ## Odzyskiwanie hasła administratora
 
 Admin może zmienić własne hasło samodzielnie w Ustawieniach (o ile pamięta

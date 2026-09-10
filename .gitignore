@@ -19,6 +19,9 @@ certs/
 *.pem
 *.key
 *.crt
+# Dane certbota (profil standalone-proxy w docker-compose.yml) — konta,
+# certyfikaty, klucze, konfiguracje odnowień, nie tylko *.pem wyżej.
+deploy/nginx/letsencrypt-data/
 
 # Baza danych / backupy (NIE migracje Prisma — te muszą być w repo)
 *.sql

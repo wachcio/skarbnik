@@ -57,6 +57,42 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
 
+  # --- Samodzielny reverse proxy (bez NGINX Proxy Managera) ---
+  # Opcjonalne usługi, WYŁĄCZONE domyślnie (profil `standalone-proxy`), żeby
+  # nie kolidować z portami 80/443 na wdrożeniach, które i tak stawiają NGINX
+  # Proxy Managera obok (dom/VPS — patrz README.md). Uruchamiasz je tylko
+  # jawnie: `docker compose --profile standalone-proxy up -d`.
+  # Robią dokładnie to, co w wariancie z NPM robi Proxy Host + Custom
+  # Location "/api" -> backend:4000: jedna domena, TLS z Let's Encrypt,
+  # / -> frontend, /api -> backend. Zobacz też deploy/nginx/init-letsencrypt.sh
+  # (jednorazowe pierwsze wystawienie certyfikatu).
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    profiles: ["standalone-proxy"]
+    depends_on:
+      - backend
+      - frontend
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/templates:/etc/nginx/templates:ro
+      - ./deploy/nginx/letsencrypt-data/conf:/etc/letsencrypt:ro
+      - ./deploy/nginx/letsencrypt-data/www:/var/www/certbot:ro
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    profiles: ["standalone-proxy"]
+    volumes:
+      - ./deploy/nginx/letsencrypt-data/conf:/etc/letsencrypt
+      - ./deploy/nginx/letsencrypt-data/www:/var/www/certbot
+    entrypoint: >
+      /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;"
+
 volumes:
   mysql-data:
   certs:
