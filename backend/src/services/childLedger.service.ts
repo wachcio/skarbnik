@@ -75,3 +75,69 @@ export async function getChildLedger(
     })
     .filter((row) => !row.archived || row.target > 0 || row.paid > 0);
 }
+
+export interface ChildSemesterReport {
+  semesterId: string;
+  semesterLabel: string;
+  ledger: CategoryLedgerRow[];
+  totalTarget: number;
+  totalPaid: number;
+  totalRemaining: number;
+}
+
+export interface ChildFullReport {
+  child: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    parentContactEmail: string | null;
+    parentContactPhone: string | null;
+    notes: string | null;
+  };
+  semesters: ChildSemesterReport[];
+  grandTotalTarget: number;
+  grandTotalPaid: number;
+}
+
+/**
+ * Pełna "karta dziecka" na potrzeby raportu z widoku dziecka: dane
+ * kontaktowe/notatki + rozliczenie wg kategorii dla KAŻDEGO semestru
+ * naraz (w odróżnieniu od `getChildLedger`, który liczy jeden semestr —
+ * ekran dziecka pokazuje jeden na raz z przełącznikiem, ale raport ma
+ * dać pełny obraz roku szkolnego na jednym dokumencie).
+ */
+export async function getChildFullReport(childId: string): Promise<ChildFullReport | null> {
+  const child = await prisma.child.findUnique({ where: { id: childId } });
+  if (!child) return null;
+
+  const semesters = await prisma.semester.findMany({ orderBy: { number: "asc" } });
+  const semesterReports = await Promise.all(
+    semesters.map(async (semester): Promise<ChildSemesterReport> => {
+      const ledger = await getChildLedger(childId, semester.id);
+      const totalTarget = ledger.reduce((sum, row) => sum + row.target, 0);
+      const totalPaid = ledger.reduce((sum, row) => sum + row.paid, 0);
+      return {
+        semesterId: semester.id,
+        semesterLabel: semester.label,
+        ledger,
+        totalTarget,
+        totalPaid,
+        totalRemaining: Math.max(0, totalTarget - totalPaid),
+      };
+    })
+  );
+
+  return {
+    child: {
+      id: child.id,
+      firstName: child.firstName,
+      lastName: child.lastName,
+      parentContactEmail: child.parentContactEmail,
+      parentContactPhone: child.parentContactPhone,
+      notes: child.notes,
+    },
+    semesters: semesterReports,
+    grandTotalTarget: semesterReports.reduce((sum, s) => sum + s.totalTarget, 0),
+    grandTotalPaid: semesterReports.reduce((sum, s) => sum + s.totalPaid, 0),
+  };
+}

@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { requireAuth, requireRole, sessionLabel } from "../middleware/auth";
 import { recordAudit } from "../services/auditLog.service";
-import { getChildLedger } from "../services/childLedger.service";
+import { getChildLedger, getChildFullReport } from "../services/childLedger.service";
+import { sendChildReportPdf, sendChildReportXlsx } from "../services/export.service";
 import { asyncHandler } from "../lib/asyncHandler";
 
 export const childrenRouter = Router();
@@ -160,6 +161,29 @@ childrenRouter.get(
 
     const ledger = await getChildLedger(req.params.id, semesterId);
     res.json(ledger);
+  })
+);
+
+// Pełny raport dziecka (dane + rozliczenie OBU semestrów naraz) do
+// pobrania jako plik — ten sam próg dostępu co `/ledger` (admin: każde
+// dziecko, rodzic: tylko powiązane).
+childrenRouter.get(
+  "/:id/report",
+  asyncHandler(async (req, res) => {
+    if (!(await canAccessChild(req, req.params.id))) {
+      return res.status(403).json({ error: "Brak uprawnień." });
+    }
+
+    const format = req.query.format;
+    if (format !== "pdf" && format !== "xlsx") {
+      return res.status(400).json({ error: "Nieprawidłowy parametr format — dozwolone: pdf, xlsx." });
+    }
+
+    const report = await getChildFullReport(req.params.id);
+    if (!report) return res.status(404).json({ error: "Nie znaleziono dziecka." });
+
+    if (format === "xlsx") return sendChildReportXlsx(res, report);
+    return sendChildReportPdf(res, report);
   })
 );
 

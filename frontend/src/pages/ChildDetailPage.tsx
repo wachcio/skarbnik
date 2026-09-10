@@ -116,6 +116,19 @@ export function ChildDetailPage() {
         </div>
       )}
 
+      <div className="card stack-card">
+        <div className="page-header" style={{ marginBottom: "0.4rem" }}>
+          <h2 style={{ marginBottom: 0 }}>Raport</h2>
+          <div className="export-links">
+            <a href={`/api/children/${child.id}/report?format=pdf`}>PDF</a>
+            <a href={`/api/children/${child.id}/report?format=xlsx`}>Excel</a>
+          </div>
+        </div>
+        <p className="muted footnote-tight" style={{ marginTop: 0 }}>
+          Pełna karta dziecka: dane kontaktowe, notatki oraz rozliczenie i historia wpłat za oba semestry naraz.
+        </p>
+      </div>
+
       <div className="stack-card">
         <ChildPayments childId={child.id} />
       </div>

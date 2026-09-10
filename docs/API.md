@@ -37,6 +37,7 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 | PATCH | `/api/children/:id` | Admin | Edycja dziecka. | ✅ |
 | DELETE | `/api/children/:id` | Admin | Usunięcie (kaskadowo wpłaty i powiązania rodziców; pełna migawka w logu audytowym). | ✅ |
 | GET | `/api/children/:id/ledger?semesterId=` | Każdy | Rozliczenie dziecka wg kategorii (kwota/wpłacono/brakuje) w danym semestrze. | ✅ |
+| GET | `/api/children/:id/report?format=pdf\|xlsx` | Każdy | Pełna „karta dziecka” do pobrania: dane kontaktowe/notatki + rozliczenie wg kategorii i historia wpłat za OBA semestry naraz (w odróżnieniu od `/ledger`, który liczy jeden semestr na raz). | ✅ |
 
 ## Semestry
 

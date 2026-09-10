@@ -5,6 +5,7 @@ import type { Response } from "express";
 import type { SemesterSummary } from "./reports.service";
 import type { ArrearsRow } from "./reports.service";
 import type { MonthlyExpensesReport } from "./reports.service";
+import type { ChildFullReport } from "./childLedger.service";
 import { formatWarsawDateTime, warsawTimestampForFilename } from "../lib/time";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
@@ -518,4 +519,196 @@ export async function sendExpensesByMonthXlsx(res: Response, report: MonthlyExpe
   generatedRow.font = { italic: true, color: { argb: ARGB_MUTED }, size: 9 };
 
   await sendWorkbook(res, workbook, reportFilename("wydatki-wg-miesiecy", semesterLabel));
+}
+
+export function sendChildReportPdf(res: Response, report: ChildFullReport) {
+  const childName = `${report.child.firstName} ${report.child.lastName}`;
+  const doc = startPdf(res, reportFilename("karta-dziecka", childName));
+  pdfHeader(doc, `Karta dziecka — ${childName}`, "Dane i składki za oba semestry");
+
+  doc.font("Body").fontSize(10).fillColor(INK_MUTED);
+  doc.text(`E-mail rodzica: ${report.child.parentContactEmail || "—"}`);
+  doc.text(`Telefon: ${report.child.parentContactPhone || "—"}`);
+  doc.text(`Notatki: ${report.child.notes || "—"}`);
+  doc.fillColor(INK);
+  doc.moveDown(0.8);
+
+  const summaryColumns: PdfColumn[] = [
+    { header: "Kategoria", width: 190 },
+    { header: "Plan", width: 90, align: "right" },
+    { header: "Wpłacono", width: 90, align: "right" },
+    { header: "Brakuje", width: 106, align: "right" },
+  ];
+  const paymentColumns: PdfColumn[] = [
+    { header: "Data", width: 80 },
+    { header: "Kategoria", width: 170 },
+    { header: "Opis", width: 130 },
+    { header: "Kwota", width: 96, align: "right" },
+  ];
+
+  for (const semester of report.semesters) {
+    if (doc.y > doc.page.height - doc.page.margins.bottom - 100) doc.addPage();
+
+    doc.font("Body-Bold").fontSize(13).fillColor(INK).text(semester.semesterLabel);
+    doc.moveDown(0.3);
+
+    if (semester.ledger.length === 0) {
+      doc.font("Body").fontSize(10).fillColor(INK_MUTED).text("Brak kategorii z ustaloną kwotą w tym semestrze.");
+      doc.fillColor(INK);
+      doc.moveDown(0.8);
+      continue;
+    }
+
+    const summaryRows = [
+      ...semester.ledger.map((row) => [
+        row.categoryName + (row.archived ? " (zarchiwizowana)" : ""),
+        currency.format(row.target),
+        currency.format(row.paid),
+        currency.format(row.remaining),
+      ]),
+      [
+        "Razem",
+        currency.format(semester.totalTarget),
+        currency.format(semester.totalPaid),
+        currency.format(semester.totalRemaining),
+      ],
+    ];
+    pdfTable(doc, summaryColumns, summaryRows, {
+      highlightColumnIndex: 3,
+      highlightColor: DANGER,
+      boldRowIndex: summaryRows.length - 1,
+    });
+    doc.moveDown(0.5);
+
+    // Płaska, chronologiczna historia wpłat pod tabelą kategorii — to samo
+    // co widać na ekranie dziecka (patrz ChildPayments.tsx), tylko za
+    // wszystkie kategorie naraz zamiast osobno pod każdą z nich.
+    const payments = semester.ledger
+      .flatMap((row) => row.payments.map((p) => ({ ...p, categoryName: row.categoryName })))
+      .sort((a, b) => new Date(a.paidAt).getTime() - new Date(b.paidAt).getTime());
+
+    if (payments.length > 0) {
+      if (doc.y > doc.page.height - doc.page.margins.bottom - 60) doc.addPage();
+      doc.font("Body-Bold").fontSize(10).fillColor(INK_MUTED).text("Historia wpłat");
+      doc.fillColor(INK);
+      doc.moveDown(0.2);
+      pdfTable(
+        doc,
+        paymentColumns,
+        payments.map((p) => [
+          shortDate.format(new Date(p.paidAt)),
+          p.categoryName,
+          p.description ?? "—",
+          currency.format(p.amount),
+        ])
+      );
+    }
+
+    doc.moveDown(0.8);
+  }
+
+  if (doc.y > doc.page.height - doc.page.margins.bottom - 90) doc.addPage();
+  const boxX = doc.page.margins.left;
+  const boxY = doc.y;
+  const boxWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const boxHeight = 60;
+  doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 8).fill(BRAND_SOFT);
+  doc.fillColor(INK_MUTED).font("Body").fontSize(9).text("RAZEM ZA OBA SEMESTRY", boxX + 16, boxY + 12);
+  const percent = report.grandTotalTarget > 0 ? Math.round((report.grandTotalPaid / report.grandTotalTarget) * 100) : 0;
+  doc
+    .fillColor(percent >= 100 ? SUCCESS : BRAND)
+    .font("Body-Bold")
+    .fontSize(15)
+    .text(
+      `${currency.format(report.grandTotalPaid)} / ${currency.format(report.grandTotalTarget)} · ${percent}%`,
+      boxX + 16,
+      boxY + 27
+    );
+  doc.fillColor(INK);
+  doc.x = boxX;
+  doc.y = boxY + boxHeight + 14;
+
+  doc.end();
+}
+
+export async function sendChildReportXlsx(res: Response, report: ChildFullReport) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Skarbnik Przedszkolny";
+  workbook.created = new Date();
+
+  const childName = `${report.child.firstName} ${report.child.lastName}`;
+  const sheet = workbook.addWorksheet(`Karta ${childName}`.slice(0, 31));
+  sheet.columns = [{ width: 28 }, { width: 26 }, { width: 16 }, { width: 16 }];
+
+  function sectionHeader(text: string) {
+    const row = sheet.addRow([text]);
+    row.font = { bold: true, size: 12 };
+    sheet.mergeCells(`A${row.number}:D${row.number}`);
+  }
+
+  function moneyRow(cells: [string, number, number, number], bold = false) {
+    const row = sheet.addRow(cells);
+    row.getCell(2).numFmt = PLN_FORMAT;
+    row.getCell(3).numFmt = PLN_FORMAT;
+    row.getCell(4).numFmt = PLN_FORMAT;
+    if (bold) {
+      row.eachCell({ includeEmpty: true }, (cell) => {
+        cell.font = { bold: true };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ARGB_BRAND_SOFT } };
+      });
+    }
+    return row;
+  }
+
+  sectionHeader(`Karta dziecka — ${childName}`);
+  sheet.addRow(["E-mail rodzica", report.child.parentContactEmail || "—"]);
+  sheet.addRow(["Telefon", report.child.parentContactPhone || "—"]);
+  sheet.addRow(["Notatki", report.child.notes || "—"]);
+  sheet.addRow([]);
+
+  for (const semester of report.semesters) {
+    sectionHeader(semester.semesterLabel);
+
+    if (semester.ledger.length === 0) {
+      sheet.addRow(["Brak kategorii z ustaloną kwotą w tym semestrze."]);
+      sheet.addRow([]);
+      continue;
+    }
+
+    styleHeaderRow(sheet.addRow(["Kategoria", "Plan", "Wpłacono", "Brakuje"]));
+    for (const row of semester.ledger) {
+      moneyRow([row.categoryName + (row.archived ? " (zarchiwizowana)" : ""), row.target, row.paid, row.remaining]);
+    }
+    moneyRow(["Razem", semester.totalTarget, semester.totalPaid, semester.totalRemaining], true);
+    sheet.addRow([]);
+
+    const payments = semester.ledger
+      .flatMap((row) => row.payments.map((p) => ({ ...p, categoryName: row.categoryName })))
+      .sort((a, b) => new Date(a.paidAt).getTime() - new Date(b.paidAt).getTime());
+
+    if (payments.length > 0) {
+      styleHeaderRow(sheet.addRow(["Data", "Kategoria", "Opis", "Kwota"]));
+      for (const p of payments) {
+        const row = sheet.addRow([shortDate.format(new Date(p.paidAt)), p.categoryName, p.description || "", p.amount]);
+        row.getCell(4).numFmt = PLN_FORMAT;
+      }
+      sheet.addRow([]);
+    }
+  }
+
+  sectionHeader("Razem za oba semestry");
+  styleHeaderRow(sheet.addRow(["", "Plan", "Wpłacono", ""]));
+  const grandRow = sheet.addRow(["", report.grandTotalTarget, report.grandTotalPaid, ""]);
+  grandRow.getCell(2).numFmt = PLN_FORMAT;
+  grandRow.getCell(3).numFmt = PLN_FORMAT;
+  grandRow.eachCell({ includeEmpty: true }, (cell) => {
+    cell.font = { bold: true };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ARGB_BRAND_SOFT } };
+  });
+  sheet.addRow([]);
+
+  const generatedRow = sheet.addRow([`Wygenerowano: ${formatWarsawDateTime()}`]);
+  generatedRow.font = { italic: true, color: { argb: ARGB_MUTED }, size: 9 };
+
+  await sendWorkbook(res, workbook, reportFilename("karta-dziecka", childName));
 }
