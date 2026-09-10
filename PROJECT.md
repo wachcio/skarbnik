@@ -318,6 +318,22 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (26) — Autor/wersja/data publikacji w .env + dyskretna stopka
+- Nowe zmienne `APP_AUTHOR`/`APP_VERSION`/`APP_RELEASE_DATE` (z
+  sensownymi domyślnymi wartościami w env.ts) — dołączone do
+  `GET /api/health` jako `app: {...}`, skąd frontend pobiera dane do
+  wyświetlenia (nie na sztywno w kodzie). Wpisane do `.env.example`
+  (root + backend/) i do rzeczywistych lokalnych `.env` (gitignored),
+  jawnie przekazane w `docker-compose.yml` do kontenera backendu.
+- Nowy `AppInfoFooter.tsx`: dyskretna, wyciszona stopka na samym dole
+  Ustawień („Skarbnik Przedszkolny {wersja} · {autor} · {data po
+  polsku}”), widoczna dla obu ról.
+- **Zweryfikowane** na żywym Dockerze+MySQL: backend uruchomiony z
+  niestandardowymi wartościami env — curlem potwierdzone, że
+  `/api/health` zwraca realne wartości z env, nie domyślne z kodu.
+  Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
+  dla admina i rodzica, oba motywy.
+
 ### 2026-09-10 (25) — Przełącznik motywu jako ikonka słońca/księżyca
 - Zamiast listy rozwijanej (Auto/Jasny/Ciemny) — okrągły przycisk z
   jedną ikonką pokazującą aktualnie aktywny motyw (☀️/🌙), klik
