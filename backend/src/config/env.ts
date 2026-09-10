@@ -35,6 +35,12 @@ const envSchema = z.object({
     ),
   LOGIN_RATE_LIMIT_PER_IP: z.coerce.number().default(20),
   LOGIN_RATE_LIMIT_WINDOW_MINUTES: z.coerce.number().default(15),
+
+  // Czysto informacyjne — appka je tylko wyświetla (patrz /api/health i
+  // stopka w Ustawieniach), nie wpływają na działanie niczego innego.
+  APP_AUTHOR: z.string().default("wachcio"),
+  APP_VERSION: z.string().default("1.0.0"),
+  APP_RELEASE_DATE: z.string().default("2026-09-10"),
 });
 
 const parsed = envSchema.safeParse(process.env);

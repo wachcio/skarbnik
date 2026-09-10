@@ -987,3 +987,11 @@ code {
   white-space: pre;
   color: var(--ink);
 }
+
+.app-info-footer {
+  margin: 1.5rem 0 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  opacity: 0.7;
+}

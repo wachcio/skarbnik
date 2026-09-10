@@ -120,4 +120,4 @@ Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kat
 
 | Metoda | Ścieżka | Rola | Opis | Status |
 |---|---|---|---|---|
-| GET | `/api/health` | Brak | Status appki + połączenia z bazą. | ✅ |
+| GET | `/api/health` | Brak | Status appki + połączenia z bazą. Dołącza też `app: { version, author, releaseDate }` z env (`APP_VERSION`/`APP_AUTHOR`/`APP_RELEASE_DATE`) — źródło dla dyskretnej stopki w Ustawieniach. | ✅ |

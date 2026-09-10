@@ -6,6 +6,7 @@ import type { Settings } from "../lib/types";
 import { BackupSection } from "../components/BackupSection";
 import { ChangePasswordSection } from "../components/ChangePasswordSection";
 import { ChangeEmailSection } from "../components/ChangeEmailSection";
+import { AppInfoFooter } from "../components/AppInfoFooter";
 
 export function SettingsPage() {
   const { user } = useAuth();
@@ -122,6 +123,7 @@ export function SettingsPage() {
 
       <ChangeEmailSection />
       <ChangePasswordSection />
+      <AppInfoFooter />
     </div>
   );
 }
