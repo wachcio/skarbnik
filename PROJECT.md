@@ -318,6 +318,24 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (19) — Samodzielna zmiana e-maila w Ustawieniach
+- Użytkownik zapytał, jak zmienić e-mail admina — appka nie miała na to
+  żadnej drogi. Ten sam wzorzec co zmiana hasła (poprzedni wpis): nowy
+  `POST /api/auth/change-email` (dowolna rola, wymaga obecnego hasła —
+  e-mail to zarazem login, więc bez tej weryfikacji przejęta sesja
+  mogłaby po cichu przejąć konto na stałe).
+- Nowy `ChangeEmailSection.tsx` w Ustawieniach. `AuthContext` dostał
+  `refreshUser()` — karta „Zalogowano jako” aktualizuje się od razu po
+  zmianie, bez przeładowania strony.
+- Sesja NIE jest niszczona po zmianie e-maila (w odróżnieniu od resetu
+  hasła admina przez CLI) — to rutynowa zmiana w trakcie aktywnej
+  sesji, nie scenariusz utraty dostępu.
+- **Zweryfikowane** na żywym Dockerze+MySQL: curlem wszystkie gałęzie
+  walidacji (złe hasło, zły format, identyczny e-mail, e-mail zajęty —
+  409, sukces), logowanie starym e-mailem odrzucone/nowym zaakceptowane,
+  aktywna sesja przetrwała zmianę. Ekran zweryfikowany Playwrightem w
+  obu motywach, w tym żywa aktualizacja karty „Zalogowano jako”.
+
 ### 2026-09-10 (18) — Pełny raport dziecka (oba semestry naraz)
 - Widok dziecka pokazywał rozliczenie jednego semestru na raz
   (przełącznik u góry sekcji Składki). Nowa karta „Raport” dodaje
