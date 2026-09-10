@@ -318,6 +318,23 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (23) — Dział pomocy + pływający przycisk "?"
+- Pływający przycisk pomocy widoczny na każdym zalogowanym ekranie
+  (nad dolną nawigacją), prowadzący do nowej strony `/help` z 13
+  rozwijanymi sekcjami (natywny `<details>`/`<summary>`, bez
+  biblioteki) tłumaczącymi appkę krok po kroku: jak to działa
+  (semestry, kategorie/cele, wpłaty, wydatki, raporty), role admin/
+  rodzic, Dzieci, Kategorie, Wpłaty (limity budżetowe), Wydatki,
+  Raporty, Widok publiczny, Konta rodziców, Kopia zapasowa, zmiana
+  e-maila/hasła, odzyskiwanie hasła admina, najczęstsze pytania.
+- Treść dopasowana do roli — sekcje dotyczące funkcji tylko-dla-admina
+  są ukryte dla rodzica (rodzic widzi 6 z 13 sekcji).
+- **Zweryfikowane** na żywym Dockerze+MySQL przez Playwright: przycisk
+  widoczny i poprawnie umiejscowiony na 390px i 320px w obu motywach,
+  znika na samej stronie pomocy, pierwsza sekcja domyślnie rozwinięta,
+  admin widzi wszystkie 13 sekcji a rodzic dokładnie 6 dopasowanych do
+  jego roli.
+
 ### 2026-09-10 (22) — Naprawa: "Nazwisko Imię" tam, gdzie sortujemy po nazwisku
 - Użytkownik przesłał zrzuty z produkcji: mimo poprzedniej poprawki
   kolacji dalej "nie widać" sortowania. Rzeczywista przyczyna: dane BYŁY
