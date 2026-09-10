@@ -318,6 +318,21 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (14) — Raport "Wydatki wg miesięcy"
+- Nowa sekcja w Raportach: wydatki wybranego semestru pogrupowane wg
+  miesiąca (czas polski), najnowszy miesiąc na górze, z sumą per
+  miesiąc i za cały semestr. Ten sam wzorzec co reszta strony (karta
+  na miesiąc + lista wydatków w środku) i eksport PDF/Excel.
+- Nowe helpery `warsawMonthKey`/`warsawMonthLabel` w `lib/time.ts`.
+  PDF renderuje osobną mini-tabelę na miesiąc z pogrubionym wierszem
+  „Razem” — ten sam mechanizm (`boldRowIndex` w `pdfTable()`) co przy
+  zaległościach per dziecko z poprzedniego wpisu.
+- **Zweryfikowane** na żywym Dockerze+MySQL: wydatki w trzech różnych
+  miesiącach, poprawne grupowanie/sortowanie/sumy (761,25 zł łącznie).
+  PDF obejrzany przez pdftoppm, Excel odczytany programowo, 403 dla
+  konta rodzica (curl), ekran zweryfikowany Playwrightem w obu
+  motywach.
+
 ### 2026-09-10 (13) — Podsumowanie zaległości per dziecko
 - Sekcja zaległości grupowała już wpłaty po dziecku, ale brakowało
   sumy — trzeba było ręcznie dodać kwoty z poszczególnych kategorii.
