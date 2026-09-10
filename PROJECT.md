@@ -318,6 +318,26 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (22) — Naprawa: "Nazwisko Imię" tam, gdzie sortujemy po nazwisku
+- Użytkownik przesłał zrzuty z produkcji: mimo poprzedniej poprawki
+  kolacji dalej "nie widać" sortowania. Rzeczywista przyczyna: dane BYŁY
+  poprawnie posortowane po nazwisku, ale appka wyświetlała "Imię
+  Nazwisko" — więc lista posortowana po nazwisku pokazywała na
+  pierwszym miejscu ciąg imion, które z natury nie są posortowane.
+  Wyglądało to jak brak sortowania, mimo że dane pod spodem były OK.
+- Zmieniona kolejność wyświetlania na "Nazwisko Imię" wszędzie, gdzie
+  lista dzieci jest posortowana po nazwisku: lista Dzieci, karty
+  Zaległości w Raportach (+ eksporty PDF/Excel, bo to wspólne źródło —
+  `childName` w `getArrears()`), dropdown "Dziecko" przy dodawaniu
+  wpłaty, checkboxy wyboru dzieci przy kontach rodziców. Świadomie BEZ
+  zmian: nagłówek karty dziecka, tytuł raportu "Karta dziecka", lista
+  wpłat (sortowana chronologicznie, nie po nazwisku) — tam "Imię
+  Nazwisko" nadal pasuje.
+- **Zweryfikowane** na żywym Dockerze+MySQL tymi samymi ośmioma trudnymi
+  nazwiskami co poprzednia poprawka: curlem (API) i Playwrightem (UI) —
+  wszystkie cztery miejsca pokazują teraz alfabetyczny porządek
+  widoczny na pierwszy rzut oka.
+
 ### 2026-09-10 (21) — Naprawa: polskie sortowanie nazwisk dzieci
 - Zgłoszone przez użytkownika: nazwiska dzieci w widoku Dzieci (admin)
   i w raportach powinny być alfabetyczne. Zapytania SQL już sortowały
