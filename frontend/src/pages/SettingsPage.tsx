@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 import type { Settings } from "../lib/types";
 import { BackupSection } from "../components/BackupSection";
+import { ChangePasswordSection } from "../components/ChangePasswordSection";
 
 export function SettingsPage() {
   const { user } = useAuth();
@@ -56,6 +57,8 @@ export function SettingsPage() {
           </div>
         </dl>
       </div>
+
+      <ChangePasswordSection />
 
       {isAdmin && (
         <>

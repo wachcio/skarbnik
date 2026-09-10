@@ -15,6 +15,7 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 | POST | `/api/auth/login` | Brak | Logowanie e-mail+hasło, ustawia ciasteczko sesji. Limit prób per IP + tymczasowa blokada konta. | ✅ |
 | POST | `/api/auth/logout` | Każdy | Wylogowanie, niszczy sesję. | ✅ |
 | GET | `/api/auth/me` | Każdy | Dane zalogowanego użytkownika + lista `childIds` (dla rodzica). | ✅ |
+| POST | `/api/auth/change-password` | Każdy | Samodzielna zmiana WŁASNEGO hasła (wymaga podania obecnego hasła). Inne niż reset przez admina pod `/api/users/:id/reset-password` — ten dotyczy tylko kont innych (rodziców) i nie wymaga starego hasła. | ✅ |
 
 ## Konta (użytkownicy)
 

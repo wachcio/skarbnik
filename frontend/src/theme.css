@@ -145,6 +145,13 @@ a {
   font-weight: 600;
 }
 
+.success-text {
+  color: var(--success);
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+  font-weight: 600;
+}
+
 .footnote {
   margin-top: 2rem;
   font-size: 0.85rem;
