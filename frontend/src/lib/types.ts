@@ -113,3 +113,22 @@ export interface MonthlyExpensesReport {
   total: number;
   months: MonthlyExpenseGroup[];
 }
+
+export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "LOCKOUT";
+
+export interface AuditLogEntry {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: AuditAction;
+  performedById: string | null;
+  performedByLabel: string;
+  dataBefore: unknown;
+  dataAfter: unknown;
+  createdAt: string;
+}
+
+export interface AuditLogPage {
+  entries: AuditLogEntry[];
+  nextCursor: string | null;
+}

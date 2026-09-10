@@ -954,3 +954,17 @@ code {
 .help-section-body strong {
   color: var(--ink);
 }
+
+/* ---- log audytowy ---- */
+
+.audit-json {
+  margin: 0.25rem 0 0;
+  padding: 0.6rem 0.7rem;
+  background: var(--surface-alt);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink);
+}

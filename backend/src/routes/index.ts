@@ -11,6 +11,7 @@ import { settingsRouter } from "./settings.routes";
 import { reportsRouter } from "./reports.routes";
 import { backupRouter } from "./backup.routes";
 import { publicRouter } from "./public.routes";
+import { auditLogRouter } from "./auditLog.routes";
 
 export const apiRouter = Router();
 
@@ -26,3 +27,4 @@ apiRouter.use("/settings", settingsRouter);
 apiRouter.use("/reports", reportsRouter);
 apiRouter.use("/backup", backupRouter);
 apiRouter.use("/public", publicRouter);
+apiRouter.use("/audit-log", auditLogRouter);

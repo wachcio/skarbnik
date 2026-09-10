@@ -104,6 +104,12 @@ Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kat
 | GET | `/api/backup/export` | Admin | Pełny eksport bazy do jednego pliku JSON. | ✅ |
 | POST | `/api/backup/import` | Admin | Pełne przywrócenie bazy z pliku JSON. | ✅ |
 
+## Log audytowy
+
+| Metoda | Ścieżka | Rola | Opis | Status |
+|---|---|---|---|---|
+| GET | `/api/audit-log?entityType=&action=&cursor=&limit=` | Admin | Historia zmian w appce (kto/co/kiedy), stronicowana kursorem (`nextCursor` w odpowiedzi), najnowsze pierwsze. Filtry opcjonalne: `entityType` (np. `Child`, `Payment`), `action` (`CREATE`\|`UPDATE`\|`DELETE`\|`LOCKOUT`). `dataBefore`/`dataAfter` nigdy nie zawierają hasła. | ✅ |
+
 ## Widok publiczny
 
 | Metoda | Ścieżka | Rola | Opis | Status |

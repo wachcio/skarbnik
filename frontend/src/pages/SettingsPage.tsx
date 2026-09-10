@@ -107,6 +107,16 @@ export function SettingsPage() {
           </div>
 
           <BackupSection />
+
+          <div className="card stack-card">
+            <h2>Log audytowy</h2>
+            <p className="muted footnote-tight" style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+              Historia wszystkich zmian w appce — kto, co i kiedy zrobił.
+            </p>
+            <Link to="/audit-log" className="btn btn-secondary">
+              Zobacz log
+            </Link>
+          </div>
         </>
       )}
 

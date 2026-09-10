@@ -207,6 +207,17 @@ export function HelpPage() {
         </Section>
       )}
 
+      {isAdmin && (
+        <Section title="Log audytowy">
+          <p>
+            W Ustawienia → Log audytowy widać historię wszystkich zmian w appce — kto, co i kiedy zrobił (np. kto
+            usunął wpłatę albo zmienił kwotę docelową kategorii). Listę można filtrować po typie (dziecko,
+            wpłata, wydatek…) i po rodzaju zmiany (utworzono, zaktualizowano, usunięto). Ten log zapisuje się
+            automatycznie przy każdej zmianie — nie trzeba nic włączać.
+          </p>
+        </Section>
+      )}
+
       <Section title="Moje konto — zmiana e-maila i hasła">
         <p>
           Na dole Ustawień każdy zalogowany (administrator i rodzic) może samodzielnie zmienić swój e-mail
