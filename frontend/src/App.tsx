@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { ChildrenListPage } from "./pages/ChildrenListPage";
 import { ChildDetailPage } from "./pages/ChildDetailPage";
 import { PaymentsPage } from "./pages/PaymentsPage";
+import { ExpensesPage } from "./pages/ExpensesPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { ParentAccountsPage } from "./pages/ParentAccountsPage";
@@ -49,6 +50,7 @@ function AppRoutes() {
         <Route path="/children" element={<ChildrenListPage />} />
         <Route path="/children/:id" element={<ChildDetailPage />} />
         <Route path="/payments" element={<PaymentsPage />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/users" element={<ParentAccountsPage />} />

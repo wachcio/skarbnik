@@ -74,3 +74,11 @@ export interface SemesterSummary {
   childCount: number;
   byCategory: CategorySummary[];
 }
+
+export interface Expense {
+  id: string;
+  amount: string; // Decimal serializowany przez Prisma jako string w JSON
+  spentAt: string;
+  description: string | null;
+  category: { id: string; name: string; archived: boolean };
+}

@@ -10,9 +10,9 @@ export function ThemeToggle() {
       aria-label="Motyw"
       className="input theme-select"
     >
-      <option value="system">Motyw: systemowy</option>
-      <option value="light">Motyw: jasny</option>
-      <option value="dark">Motyw: ciemny</option>
+      <option value="system">Auto</option>
+      <option value="light">Jasny</option>
+      <option value="dark">Ciemny</option>
     </select>
   );
 }

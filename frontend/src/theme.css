@@ -181,6 +181,31 @@ a {
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* Na wąskich telefonach nazwa apki skraca się do "Skarbnik" (patrz
+   AppHeader.tsx) i przyciski/select w nagłówku dostają mniej powietrza —
+   inaczej "Skarbnik Przedszkolny" + motyw + Wyloguj nie mieszczą się
+   w jednej linii poniżej ok. 380px szerokości. */
+@media (max-width: 400px) {
+  .app-title-suffix {
+    display: none;
+  }
+  .app-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    gap: 0.5rem;
+  }
+  .app-header-actions {
+    gap: 0.35rem;
+  }
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .page {

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ThemeToggle } from "../components/ThemeToggle";
+import { AppHeader } from "../components/AppHeader";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -26,10 +26,7 @@ export function LoginPage() {
 
   return (
     <div className="shell">
-      <header className="app-header">
-        <strong>Skarbnik Przedszkolny</strong>
-        <ThemeToggle />
-      </header>
+      <AppHeader />
 
       <main className="page page-narrow">
         <form onSubmit={handleSubmit} className="form">

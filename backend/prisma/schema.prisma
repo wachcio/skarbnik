@@ -85,6 +85,7 @@ model Semester {
   categoryTargets      CategoryTarget[]
   childCategoryAmounts ChildCategoryAmount[]
   payments             Payment[]
+  expenses             Expense[]
 
   @@map("semesters")
 }
@@ -101,6 +102,7 @@ model Category {
   targets      CategoryTarget[]
   childAmounts ChildCategoryAmount[]
   payments     Payment[]
+  expenses     Expense[]
 
   @@map("categories")
 }
@@ -159,6 +161,29 @@ model Payment {
   semester Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
 
   @@map("payments")
+}
+
+/// Wydatek skarbnika — druga strona bilansu obok wpłat. Powiązany z tą
+/// samą kategorią co wpłaty (nie z konkretnym dzieckiem), żeby dało się
+/// zestawić "zebrano na ten cel vs wydano na ten cel".
+model Expense {
+  id          String   @id @default(cuid())
+  categoryId  String
+  semesterId  String
+  amount      Decimal  @db.Decimal(10, 2)
+  spentAt     DateTime
+  description String?
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Restrict: tak jak przy wpłatach — kategorie z historią wydatków usuwa
+  // się przez soft delete (archived), nie hard delete.
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+
+  @@map("expenses")
 }
 
 /// Log audytowy — kto i kiedy dodał/zmienił/usunął dane, oraz zdarzenia

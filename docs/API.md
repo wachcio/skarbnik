@@ -65,6 +65,17 @@ logika biznesowa zaplanowana na kolejny etap (zwraca `501`).
 | PATCH | `/api/payments/:id` | Admin | Edycja wpłaty. Te same dwa limity co przy tworzeniu (stara kwota edytowanej wpłaty nie jest liczona podwójnie). | ✅ |
 | DELETE | `/api/payments/:id` | Admin | Usunięcie wpłaty (hard delete + migawka w logu audytowym). | ✅ |
 
+## Wydatki
+
+Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kategorię). Widoczne i edytowalne wyłącznie przez admina (rodzice nie widzą tej zakładki).
+
+| Metoda | Ścieżka | Rola | Opis | Status |
+|---|---|---|---|---|
+| GET | `/api/expenses?categoryId=&semesterId=` | Admin | Lista wydatków (z opcjonalnymi filtrami), posortowana malejąco po dacie wydatku. | ✅ |
+| POST | `/api/expenses` | Admin | Nowy wydatek (kategoria, semestr, kwota, data „kiedy", opcjonalny opis „za co"). Odrzucony (400), jeśli kategoria jest zarchiwizowana lub nie istnieje. | ✅ |
+| PATCH | `/api/expenses/:id` | Admin | Edycja wydatku (częściowa aktualizacja pól). | ✅ |
+| DELETE | `/api/expenses/:id` | Admin | Usunięcie wydatku (hard delete + migawka w logu audytowym). | ✅ |
+
 ## Ustawienia
 
 | Metoda | Ścieżka | Rola | Opis | Status |

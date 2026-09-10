@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 import type { SemesterSummary } from "../lib/types";
-import { ThemeToggle } from "../components/ThemeToggle";
+import { AppHeader } from "../components/AppHeader";
 import { DonutChart } from "../components/DonutChart";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
@@ -26,10 +26,7 @@ export function PublicSummaryPage() {
 
   return (
     <div className="shell">
-      <header className="app-header">
-        <strong>Skarbnik Przedszkolny</strong>
-        <ThemeToggle />
-      </header>
+      <AppHeader />
 
       <main className="page">
         <h1>Stan składek grupy</h1>
