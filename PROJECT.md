@@ -306,6 +306,9 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 - [x] Zabezpieczenia budżetowe wpłat: limit zbiorczy per dziecko/semestr
       i limit per pojedyncza kategoria.
 - [x] Backend + frontend: zakładka „Wydatki” (pełny CRUD, tylko admin).
+- [x] Raporty: wydatki wg kategorii/semestru + stan kasy skarbnika
+      (łącznie za całą historię), Raporty jako strona główna po
+      zalogowaniu.
 - [ ] **Do zrobienia przez użytkownika:** zweryfikować cały UI w
       przeglądarce — to pierwszy moment, gdy warto usiąść i przeklikać
       całość jako prawdziwy skarbnik (dodanie dziecka → kategorii →
@@ -314,9 +317,32 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
 - [ ] Nice-to-have na przyszłość (świadomie poza zakresem od początku):
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
-      Ewentualnie: zestawienie "zebrano na cel vs wydano na cel" łączące
-      wpłaty i wydatki w jednym raporcie (Wydatki są już powiązane z
-      kategorią, więc dane na to pozwalają — nikt jeszcze o to nie prosił).
+
+### 2026-09-10 (12) — Wydatki w raportach, stan kasy, Raporty jako strona główna
+- Skoro wydatki mają już kategorię i semestr (patrz wpis niżej), raporty
+  pokazują teraz obie strony bilansu: zestawienie zbiorcze semestru ma
+  kolumnę/wiersz „Wydano” obok zebrano/plan (na ekranie i w eksportach
+  PDF/Excel), tak jak poprosił użytkownik.
+- Nowa karta „Stan kasy” na górze Raportów: zebrano łącznie / wydano
+  łącznie / ile skarbnik dysponuje teraz. Świadomie liczona za **całą
+  historię** (wszystkie semestry razem), nie tylko wybrany semestr —
+  użytkownik potwierdził tę interpretację wprost: to jedno realne konto
+  skarbnika, więc liczba nie powinna "znikać" przy przełączeniu
+  semestru w dropdownie. Nowy endpoint `GET /api/reports/balance`.
+- Widok publiczny świadomie NIE dostaje wydatków/stanu kasy — to
+  informacja dla skarbnika, nie dla anonimowych widzów; pola odcięte
+  explicite w `public.routes.ts`, zweryfikowane że nie da się ich
+  zobaczyć mimo że dane istnieją w bazie.
+- Zakładka „Raporty” przeniesiona na pierwszą pozycję w dolnej
+  nawigacji i jest teraz stroną główną po zalogowaniu (admin trafia na
+  `/reports`; rodzic, bez dostępu do raportów, nadal na `/children`).
+- **Zweryfikowane** na żywym Dockerze+MySQL: wpłata + wydatek w tej
+  samej kategorii poprawnie sumują się w obu endpointach, PDF/Excel
+  obejrzane realnie (bez nakładania tekstu), 403 dla konta rodzica na
+  `/reports/balance` i `/expenses` (curl), brak wycieku pól
+  `spent`/`spentTotal` na `/api/public/summary`. Playwright w obu
+  motywach: kolejność zakładek, poprawny redirect po zalogowaniu wg
+  roli, 0px przepełnienia na 320px.
 
 ### 2026-09-10 (11) — Zakładka "Wydatki" (pełny CRUD, tylko admin)
 - Skarbnik wydaje pieniądze na określone cele — dodana druga strona
