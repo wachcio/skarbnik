@@ -59,9 +59,6 @@ export function SettingsPage() {
         </dl>
       </div>
 
-      <ChangeEmailSection />
-      <ChangePasswordSection />
-
       {isAdmin && (
         <>
           <div className="card stack-card">
@@ -112,6 +109,9 @@ export function SettingsPage() {
           <BackupSection />
         </>
       )}
+
+      <ChangeEmailSection />
+      <ChangePasswordSection />
     </div>
   );
 }
