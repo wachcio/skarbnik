@@ -334,6 +334,30 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
   dla admina i rodzica, oba motywy.
 
+### 2026-09-10 (28) — Wyszukiwarka na liście dzieci
+- Nowe pole `type="search"` nad listą w zakładce „Dzieci", filtrujące
+  widoczne wiersze na bieżąco (przy każdym wciśnięciu klawisza), po
+  imieniu i nazwisku łącznie.
+- Dopasowanie ignoruje wielkość liter i polskie ogonki: zapytanie i
+  imię/nazwisko każdego dziecka są normalizowane przez dekompozycję NFD
+  ze zdjęciem znaków diakrytycznych (ten sam bezpieczny wzorzec co
+  `slugify()` w `export.service.ts`, zakres zapisany przez
+  `String.fromCharCode`, nie literalnym znakiem w regexie) — dzięki temu
+  „zaba" trafia też na „Żaba", a „łoś” na „ŁOŚ”.
+- Filtrowanie działa po stronie frontendu na liście dzieci już
+  ograniczonej rolą (rodzic nadal przeszukuje tylko własne dzieci).
+  Brak dopasowań pokazuje zlokalizowany komunikat; wyczyszczenie pola
+  przywraca pełną, alfabetyczną listę.
+- Nowe klucze tłumaczeń (`children.searchPlaceholder`,
+  `children.noSearchResults`) dodane w pl i en.
+- **Zweryfikowane** na żywym Dockerze+MySQL zasianym dziećmi o tych
+  samych „trudnych” polskich nazwiskach co przy wcześniejszej naprawie
+  sortowania (Lis, Łoś, Maj, Zych, Żaba, Cichy), przez Playwright:
+  dopasowanie po nazwisku, po imieniu, bez ogonków, bez rozróżniania
+  wielkości liter, stan braku wyników i czyszczenie pola — wszystko
+  działa poprawnie; te same przypadki potwierdzone też po angielsku po
+  przełączeniu języka.
+
 ### 2026-09-10 (27) — Tłumaczenie interfejsu na angielski + przełącznik flagi
 - Cała warstwa frontendowa (33 pliki, ~3600 linii) przetłumaczona na
   angielski: nawigacja, nagłówki, przyciski, formularze, komunikaty,
