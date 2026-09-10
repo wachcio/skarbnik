@@ -73,6 +73,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "children.addError": "Nie udało się dodać dziecka.",
     "children.emptyAdmin": "Brak dzieci w bazie — dodaj pierwsze powyżej.",
     "children.emptyParent": "Nie masz jeszcze przypisanych dzieci.",
+    "children.searchPlaceholder": "Szukaj po imieniu lub nazwisku…",
+    "children.noSearchResults": "Brak dzieci pasujących do wyszukiwania.",
 
     // --- formularz dziecka ---
     "childForm.firstName": "Imię",
@@ -376,6 +378,8 @@ export const translations: Record<Language, Record<string, string>> = {
     "children.addError": "Failed to add the child.",
     "children.emptyAdmin": "No children yet — add the first one above.",
     "children.emptyParent": "You don't have any children assigned yet.",
+    "children.searchPlaceholder": "Search by first or last name…",
+    "children.noSearchResults": "No children match your search.",
 
     // --- child form ---
     "childForm.firstName": "First name",
