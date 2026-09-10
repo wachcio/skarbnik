@@ -334,6 +334,30 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
   dla admina i rodzica, oba motywy.
 
+### 2026-09-10 (27) — Tłumaczenie interfejsu na angielski + przełącznik flagi
+- Cała warstwa frontendowa (33 pliki, ~3600 linii) przetłumaczona na
+  angielski: nawigacja, nagłówki, przyciski, formularze, komunikaty,
+  dialogi potwierdzenia i cała treść działu Pomocy (13 sekcji). Własna,
+  lekka architektura i18n (bez nowej zależności): `i18n/translations.ts`
+  (płaski słownik ok. 220 kluczy pl/en), `LanguageContext`/`useLanguage`
+  (ten sam wzorzec co `useTheme`, wybór w localStorage), `LanguageToggle`
+  — przycisk-ikonka flagi (🇵🇱/🇬🇧) obok przełącznika motywu i Wyloguj
+  w nagłówku.
+- Świadome decyzje o zakresie: kwoty i większość dat zostają zawsze w
+  formacie polskim (pl-PL, "zł") niezależnie od języka — appka operuje
+  na prawdziwych złotówkach realnej placówki; nazwa appki i realne dane
+  (imiona dzieci, nazwy kategorii, etykiety semestrów) nie są
+  tłumaczone — to nie tekst interfejsu. Komunikaty błędów z backendu
+  zostają po polsku (pełne i18n backendu to osobny, większy temat,
+  świadomie odłożony).
+- **Zweryfikowane**: `npm run build` czysto mimo skali zmiany (zero
+  błędów TS). Na żywym Dockerze+MySQL przez Playwright: domyślny język
+  polski, przełączanie działa i przetrwało odświeżenie, nagłówek z
+  TRZEMA kontrolkami zmierzony na 320/360/390px (0px przepełnienia),
+  pełny przelot po angielsku przez wszystkie główne ekrany (obie role) —
+  wszystko poprawnie przetłumaczone. Grep po repo nie znalazł pominiętych
+  polskich napisów poza celowo dwujęzycznym HelpPage.tsx.
+
 ### 2026-09-10 (25) — Przełącznik motywu jako ikonka słońca/księżyca
 - Zamiast listy rozwijanej (Auto/Jasny/Ciemny) — okrągły przycisk z
   jedną ikonką pokazującą aktualnie aktywny motyw (☀️/🌙), klik
