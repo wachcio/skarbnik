@@ -318,6 +318,33 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (15) — Naprawa: import kopii zapasowej 500 na produkcji
+- **Zgłoszone przez użytkownika na produkcji** (zrzut DevTools): import
+  pliku JSON w Ustawieniach kończył się `500 Internal Server Error`.
+- Przyczyna: przy dodawaniu modelu `Expense` (wpis 11) zapomniałem
+  zaktualizować `backup.service.ts`. `Expense.category`/`Expense.semester`
+  mają `onDelete: Restrict` tak jak `Payment`, ale w odróżnieniu od
+  `Payment` (kaskaduje przez `Child`) `Expense` nie jest powiązany z
+  dzieckiem — nic go nie usuwało przed `category.deleteMany()`/
+  `semester.deleteMany()` w imporcie. Na każdej bazie z choćby jednym
+  wydatkiem (czyli każdej produkcyjnej bazie używającej Wydatków) ten
+  delete wywalał się na naruszeniu klucza obcego.
+- Naprawa: `exportBackup()` dokłada `expenses`; `importBackup()` usuwa
+  wydatki na samym początku transakcji (przed kategoriami/semestrami)
+  i odtwarza je po utworzeniu kategorii/semestrów. Pole `expenses` w
+  schemacie zod ma `.default([])`, więc starsze pliki kopii zapasowej
+  (sprzed tej funkcji, bez tego pola) nadal się importują.
+- **Zweryfikowane** na żywym Dockerze+MySQL, dokładnie odtwarzając
+  zgłoszony scenariusz: baza z wpłatą i wydatkiem → eksport → import
+  TEGO SAMEGO pliku (do bazy, w której te dane już istnieją — to
+  wcześniej 500'owało). Teraz 200, stan kasy identyczny przed/po.
+  Dodatkowo: import pliku bez pola `expenses` (symulacja starego
+  backupu) też przechodzi.
+- Lekcja na przyszłość: każdy nowy model z `onDelete: Restrict` na
+  encji, którą import kasuje i tworzy od nowa (Category, Semester),
+  wymaga też aktualizacji `backup.service.ts` — dodać do checklisty
+  mentalnej przy kolejnych takich modelach.
+
 ### 2026-09-10 (14) — Raport "Wydatki wg miesięcy"
 - Nowa sekcja w Raportach: wydatki wybranego semestru pogrupowane wg
   miesiąca (czas polski), najnowszy miesiąc na górze, z sumą per
