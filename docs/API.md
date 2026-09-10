@@ -90,8 +90,9 @@ Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kat
 | GET | `/api/reports/arrears?semesterId=` | Admin | Zestawienie zaległości wg dziecka/kategorii. | ✅ |
 | GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy dla semestru: zebrano/plan/wydano wg kategorii (reużywa `services/reports.service.ts`). | ✅ |
 | GET | `/api/reports/balance` | Admin | Stan kasy skarbnika — suma wszystkich wpłat minus suma wszystkich wydatków, za całą historię (wszystkie semestry razem, niezależnie od parametru semestru). | ✅ |
+| GET | `/api/reports/expenses-by-month?semesterId=` | Admin | Wydatki danego semestru pogrupowane wg miesiąca (czas polski), najnowszy miesiąc pierwszy, z sumą per miesiąc i za cały semestr. | ✅ |
 | GET | `/api/reports/child/:id?semesterId=` | Admin | Karta wpłat pojedynczego dziecka. | ✅ |
-| GET | `/api/reports/export?report=summary\|arrears&format=pdf\|xlsx&semesterId=` | Admin | Eksport zestawienia zbiorczego lub zaległości do pliku (PDF z osadzonym fontem PT Sans dla polskich znaków, albo XLSX). Zaległości pogrupowane po dziecku, z pogrubionym wierszem „Razem” podsumowującym zaległość każdego dziecka. | ✅ |
+| GET | `/api/reports/export?report=summary\|arrears\|expenses-by-month&format=pdf\|xlsx&semesterId=` | Admin | Eksport zestawienia zbiorczego, zaległości lub wydatków wg miesięcy do pliku (PDF z osadzonym fontem PT Sans dla polskich znaków, albo XLSX). Zaległości pogrupowane po dziecku, wydatki po miesiącu — oba z pogrubionym wierszem „Razem” podsumowującym grupę. | ✅ |
 
 ## Import / eksport
 

@@ -4,9 +4,11 @@ import PDFDocument from "pdfkit";
 import type { Response } from "express";
 import type { SemesterSummary } from "./reports.service";
 import type { ArrearsRow } from "./reports.service";
+import type { MonthlyExpensesReport } from "./reports.service";
 import { formatWarsawDateTime, warsawTimestampForFilename } from "../lib/time";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
+const shortDate = new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium", timeZone: "Europe/Warsaw" });
 
 // Ścieżka względem process.cwd() — działa identycznie w `npm run dev`
 // (tsx, cwd = backend/) i w obrazie Docker (WORKDIR /app, patrz
@@ -414,4 +416,106 @@ export async function sendArrearsXlsx(res: Response, rows: ArrearsRow[], semeste
   noteRow.font = { italic: true, color: { argb: ARGB_MUTED }, size: 9 };
 
   await sendWorkbook(res, workbook, reportFilename("zaleglosci", semesterLabel));
+}
+
+export function sendExpensesByMonthPdf(res: Response, report: MonthlyExpensesReport, semesterLabel: string) {
+  const doc = startPdf(res, reportFilename("wydatki-wg-miesiecy", semesterLabel));
+  pdfHeader(doc, "Wydatki wg miesięcy", semesterLabel);
+
+  if (report.months.length === 0) {
+    doc.fillColor(INK_MUTED).font("Body").text("Brak wydatków w tym semestrze.");
+    doc.fillColor(INK);
+  } else {
+    const columns: PdfColumn[] = [
+      { header: "Kategoria", width: 130 },
+      { header: "Data", width: 75 },
+      { header: "Opis", width: 130 },
+      { header: "Kwota", width: 61, align: "right" },
+    ];
+
+    // Osobna mini-tabela na miesiąc (jak przy zaległościach per dziecko),
+    // zamknięta pogrubionym wierszem "Razem" z sumą tego miesiąca.
+    for (const month of report.months) {
+      const tableRows = [
+        ...month.expenses.map((e) => [
+          e.categoryName + (e.categoryArchived ? " (zarchiwizowana)" : ""),
+          shortDate.format(new Date(e.spentAt)),
+          e.description ?? "—",
+          currency.format(e.amount),
+        ]),
+        ["Razem", "", "", currency.format(month.total)],
+      ];
+
+      if (doc.y > doc.page.height - doc.page.margins.bottom - 90) {
+        doc.addPage();
+      }
+
+      doc.font("Body-Bold").fontSize(12).fillColor(INK).text(month.monthLabel);
+      doc.moveDown(0.3);
+      pdfTable(doc, columns, tableRows, { boldRowIndex: tableRows.length - 1 });
+      doc.moveDown(0.6);
+    }
+
+    if (doc.y > doc.page.height - doc.page.margins.bottom - 40) {
+      doc.addPage();
+    }
+    doc
+      .font("Body-Bold")
+      .fontSize(11)
+      .fillColor(BRAND)
+      .text(`Razem za cały semestr: ${currency.format(report.total)}`);
+    doc.fillColor(INK);
+  }
+
+  doc.end();
+}
+
+export async function sendExpensesByMonthXlsx(res: Response, report: MonthlyExpensesReport, semesterLabel: string) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Skarbnik Przedszkolny";
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet(`Wydatki wg miesięcy ${semesterLabel}`.slice(0, 31), {
+    views: [{ state: "frozen", ySplit: 1 }],
+  });
+  sheet.columns = [
+    { header: "Miesiąc", key: "month", width: 18 },
+    { header: "Kategoria", key: "category", width: 26 },
+    { header: "Data", key: "date", width: 14 },
+    { header: "Opis", key: "description", width: 32 },
+    { header: "Kwota", key: "amount", width: 14, style: { numFmt: PLN_FORMAT } },
+  ];
+  styleHeaderRow(sheet.getRow(1));
+  sheet.autoFilter = { from: "A1", to: "E1" };
+
+  // Wiersze pogrupowane wg miesiąca, z pogrubionym wierszem "Razem" po
+  // każdym — ten sam wzorzec co w eksporcie zaległości per dziecko.
+  for (const month of report.months) {
+    for (const expense of month.expenses) {
+      sheet.addRow({
+        month: month.monthLabel,
+        category: expense.categoryName + (expense.categoryArchived ? " (zarchiwizowana)" : ""),
+        date: shortDate.format(new Date(expense.spentAt)),
+        description: expense.description ?? "",
+        amount: expense.amount,
+      });
+    }
+
+    const subtotalRow = sheet.addRow({ month: month.monthLabel, category: "Razem", amount: month.total });
+    subtotalRow.eachCell({ includeEmpty: true }, (cell) => {
+      cell.font = { bold: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ARGB_BRAND_SOFT } };
+    });
+  }
+
+  sheet.addRow({});
+  const totalRow = sheet.addRow({ category: "RAZEM ZA CAŁY SEMESTR", amount: report.total });
+  totalRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: ARGB_BRAND } };
+  });
+
+  const generatedRow = sheet.addRow({ month: `Wygenerowano: ${formatWarsawDateTime()}` });
+  generatedRow.font = { italic: true, color: { argb: ARGB_MUTED }, size: 9 };
+
+  await sendWorkbook(res, workbook, reportFilename("wydatki-wg-miesiecy", semesterLabel));
 }

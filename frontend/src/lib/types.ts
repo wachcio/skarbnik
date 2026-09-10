@@ -92,3 +92,24 @@ export interface Expense {
   description: string | null;
   category: { id: string; name: string; archived: boolean };
 }
+
+export interface MonthlyExpenseRow {
+  id: string;
+  categoryName: string;
+  categoryArchived: boolean;
+  amount: number;
+  spentAt: string;
+  description: string | null;
+}
+
+export interface MonthlyExpenseGroup {
+  monthKey: string;
+  monthLabel: string;
+  total: number;
+  expenses: MonthlyExpenseRow[];
+}
+
+export interface MonthlyExpensesReport {
+  total: number;
+  months: MonthlyExpenseGroup[];
+}

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { warsawMonthKey, warsawMonthLabel } from "../lib/time";
 
 export interface CategorySummary {
   categoryId: string;
@@ -156,4 +157,60 @@ export async function getArrears(semesterId: string): Promise<ArrearsRow[]> {
   }
 
   return rows;
+}
+
+export interface MonthlyExpenseRow {
+  id: string;
+  categoryName: string;
+  categoryArchived: boolean;
+  amount: number;
+  spentAt: string;
+  description: string | null;
+}
+
+export interface MonthlyExpenseGroup {
+  /** Sortowalny klucz miesiąca, np. "2026-09" — do niczego innego niż sortowanie. */
+  monthKey: string;
+  monthLabel: string;
+  total: number;
+  expenses: MonthlyExpenseRow[];
+}
+
+export interface MonthlyExpensesReport {
+  total: number;
+  months: MonthlyExpenseGroup[];
+}
+
+/**
+ * Wydatki danego semestru pogrupowane wg miesiąca (czas polski, patrz
+ * lib/time.ts), najnowszy miesiąc na górze — spójnie z listą wydatków
+ * w appce (`GET /api/expenses`, sortowana malejąco po dacie).
+ */
+export async function getExpensesByMonth(semesterId: string): Promise<MonthlyExpensesReport> {
+  const expenses = await prisma.expense.findMany({
+    where: { semesterId },
+    include: { category: true },
+    orderBy: { spentAt: "asc" },
+  });
+
+  const groups = new Map<string, MonthlyExpenseGroup>();
+  for (const expense of expenses) {
+    const key = warsawMonthKey(expense.spentAt);
+    const amount = Number(expense.amount);
+    const group = groups.get(key) ?? { monthKey: key, monthLabel: warsawMonthLabel(expense.spentAt), total: 0, expenses: [] };
+    group.total += amount;
+    group.expenses.push({
+      id: expense.id,
+      categoryName: expense.category.name,
+      categoryArchived: expense.category.archived,
+      amount,
+      spentAt: expense.spentAt.toISOString(),
+      description: expense.description,
+    });
+    groups.set(key, group);
+  }
+
+  const months = Array.from(groups.values()).sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+
+  return { total: months.reduce((sum, m) => sum + m.total, 0), months };
 }

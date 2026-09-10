@@ -29,3 +29,29 @@ export function warsawTimestampForFilename(date: Date = new Date()): string {
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
   return `${get("year")}-${get("month")}-${get("day")}-${get("hour")}${get("minute")}`;
 }
+
+const monthKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Warsaw",
+  year: "numeric",
+  month: "2-digit",
+});
+
+const monthLabelFormatter = new Intl.DateTimeFormat("pl-PL", {
+  timeZone: "Europe/Warsaw",
+  month: "long",
+  year: "numeric",
+});
+
+/** Sortowalny klucz miesiąca w czasie polskim, np. "2026-09" — do grupowania
+ * wydatków wg miesiąca niezależnie od strefy czasowej kontenera. */
+export function warsawMonthKey(date: Date): string {
+  const parts = monthKeyFormatter.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  return `${get("year")}-${get("month")}`;
+}
+
+/** Czytelna nazwa miesiąca po polsku, np. "Wrzesień 2026". */
+export function warsawMonthLabel(date: Date): string {
+  const label = monthLabelFormatter.format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}

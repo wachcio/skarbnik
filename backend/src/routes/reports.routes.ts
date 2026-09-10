@@ -2,9 +2,16 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireRole } from "../middleware/auth";
 import { asyncHandler } from "../lib/asyncHandler";
-import { getSemesterSummary, getArrears, getTreasuryBalance } from "../services/reports.service";
+import { getSemesterSummary, getArrears, getTreasuryBalance, getExpensesByMonth } from "../services/reports.service";
 import { getChildLedger } from "../services/childLedger.service";
-import { sendSummaryPdf, sendSummaryXlsx, sendArrearsPdf, sendArrearsXlsx } from "../services/export.service";
+import {
+  sendSummaryPdf,
+  sendSummaryXlsx,
+  sendArrearsPdf,
+  sendArrearsXlsx,
+  sendExpensesByMonthPdf,
+  sendExpensesByMonthXlsx,
+} from "../services/export.service";
 
 export const reportsRouter = Router();
 reportsRouter.use(requireRole("ADMIN"));
@@ -40,6 +47,15 @@ reportsRouter.get(
 );
 
 reportsRouter.get(
+  "/expenses-by-month",
+  asyncHandler(async (req, res) => {
+    const semesterId = requireSemesterId(req);
+    if (!semesterId) return res.status(400).json({ error: "Podaj semesterId." });
+    res.json(await getExpensesByMonth(semesterId));
+  })
+);
+
+reportsRouter.get(
   "/child/:id",
   asyncHandler(async (req, res) => {
     const semesterId = requireSemesterId(req);
@@ -61,8 +77,8 @@ reportsRouter.get(
 
     const report = req.query.report;
     const format = req.query.format;
-    if (report !== "summary" && report !== "arrears") {
-      return res.status(400).json({ error: "Nieprawidłowy parametr report — dozwolone: summary, arrears." });
+    if (report !== "summary" && report !== "arrears" && report !== "expenses-by-month") {
+      return res.status(400).json({ error: "Nieprawidłowy parametr report — dozwolone: summary, arrears, expenses-by-month." });
     }
     if (format !== "xlsx" && format !== "pdf") {
       return res.status(400).json({ error: "Nieprawidłowy parametr format — dozwolone: xlsx, pdf." });
@@ -77,8 +93,14 @@ reportsRouter.get(
       return sendSummaryPdf(res, summary, semester.label);
     }
 
-    const arrears = await getArrears(semesterId);
-    if (format === "xlsx") return sendArrearsXlsx(res, arrears, semester.label);
-    return sendArrearsPdf(res, arrears, semester.label);
+    if (report === "arrears") {
+      const arrears = await getArrears(semesterId);
+      if (format === "xlsx") return sendArrearsXlsx(res, arrears, semester.label);
+      return sendArrearsPdf(res, arrears, semester.label);
+    }
+
+    const monthly = await getExpensesByMonth(semesterId);
+    if (format === "xlsx") return sendExpensesByMonthXlsx(res, monthly, semester.label);
+    return sendExpensesByMonthPdf(res, monthly, semester.label);
   })
 );

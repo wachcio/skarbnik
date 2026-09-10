@@ -5,11 +5,12 @@ import { useAuth } from "../context/AuthContext";
 import { useSemesters } from "../hooks/useSemesters";
 import { SemesterSelect } from "../components/SemesterSelect";
 import { DonutChart } from "../components/DonutChart";
-import type { CategorySummary, SemesterSummary, TreasuryBalance } from "../lib/types";
+import type { CategorySummary, SemesterSummary, TreasuryBalance, MonthlyExpensesReport } from "../lib/types";
 
 const currency = new Intl.NumberFormat("pl-PL", { style: "currency", currency: "PLN" });
+const shortDate = new Intl.DateTimeFormat("pl-PL", { dateStyle: "medium" });
 
-function ExportLinks({ report, semesterId }: { report: "summary" | "arrears"; semesterId: string }) {
+function ExportLinks({ report, semesterId }: { report: "summary" | "arrears" | "expenses-by-month"; semesterId: string }) {
   return (
     <div className="export-links">
       <a href={`/api/reports/export?report=${report}&format=pdf&semesterId=${semesterId}`}>PDF</a>
@@ -33,6 +34,7 @@ export function ReportsPage() {
   const { semesters, selectedId, setSelectedId } = useSemesters();
   const [summary, setSummary] = useState<SemesterSummary | null>(null);
   const [arrears, setArrears] = useState<ArrearsRow[] | null>(null);
+  const [monthly, setMonthly] = useState<MonthlyExpensesReport | null>(null);
   const [balance, setBalance] = useState<TreasuryBalance | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,13 +42,16 @@ export function ReportsPage() {
     if (!selectedId) return;
     setSummary(null);
     setArrears(null);
+    setMonthly(null);
     Promise.all([
       apiFetch(`/reports/summary?semesterId=${selectedId}`),
       apiFetch(`/reports/arrears?semesterId=${selectedId}`),
-    ]).then(async ([summaryRes, arrearsRes]) => {
+      apiFetch(`/reports/expenses-by-month?semesterId=${selectedId}`),
+    ]).then(async ([summaryRes, arrearsRes, monthlyRes]) => {
       if (summaryRes.ok) setSummary(await summaryRes.json());
       if (arrearsRes.ok) setArrears(await arrearsRes.json());
-      if (!summaryRes.ok || !arrearsRes.ok) setError("Nie udało się pobrać raportów.");
+      if (monthlyRes.ok) setMonthly(await monthlyRes.json());
+      if (!summaryRes.ok || !arrearsRes.ok || !monthlyRes.ok) setError("Nie udało się pobrać raportów.");
     });
   }, [selectedId]);
 
@@ -205,6 +210,47 @@ export function ReportsPage() {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div className="card stack-card">
+        <div className="page-header" style={{ marginBottom: "0.6rem" }}>
+          <h2 style={{ marginBottom: 0 }}>Wydatki wg miesięcy</h2>
+          <ExportLinks report="expenses-by-month" semesterId={selectedId} />
+        </div>
+        {!monthly && !error && <p className="muted">Wczytywanie…</p>}
+        {monthly?.months.length === 0 && <p className="muted">Brak wydatków w tym semestrze.</p>}
+
+        <ul className="list">
+          {monthly?.months.map((month) => (
+            <li key={month.monthKey} className="card category-item">
+              <div className="category-item-header">
+                <strong>{month.monthLabel}</strong>
+                <span className="status-pill neutral">razem {currency.format(month.total)}</span>
+              </div>
+              <ul className="payment-list">
+                {month.expenses.map((expense) => (
+                  <li key={expense.id} className="payment-row">
+                    <span>
+                      {expense.categoryName}
+                      {expense.categoryArchived && <span className="badge-archived"> (zarchiwizowana)</span>}
+                      <span className="muted footnote-tight" style={{ display: "block" }}>
+                        {shortDate.format(new Date(expense.spentAt))}
+                        {expense.description ? ` · ${expense.description}` : ""}
+                      </span>
+                    </span>
+                    <span className="amount-paid">{currency.format(expense.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+
+        {monthly && monthly.months.length > 0 && (
+          <p className="muted footnote-tight" style={{ marginTop: "0.6rem" }}>
+            Razem za cały semestr: <strong>{currency.format(monthly.total)}</strong>
+          </p>
+        )}
       </div>
     </div>
   );
