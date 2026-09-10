@@ -103,6 +103,10 @@ interface PdfTableOptions {
   /** Indeks kolumny podświetlanej kolorem semantycznym (np. "Brakuje"). */
   highlightColumnIndex?: number;
   highlightColor?: string;
+  /** Indeks wiersza (od 0) traktowanego jako podsumowanie — pogrubiony
+   * i podświetlony tłem zamiast zwykłej zebry (np. wiersz "Razem"
+   * zamykający zaległości jednego dziecka). */
+  boldRowIndex?: number;
 }
 
 function pdfTable(doc: PDFKit.PDFDocument, columns: PdfColumn[], rows: string[][], options: PdfTableOptions = {}) {
@@ -135,14 +139,17 @@ function pdfTable(doc: PDFKit.PDFDocument, columns: PdfColumn[], rows: string[][
       drawHeader();
     }
 
-    if (rowIndex % 2 === 1) {
+    const isBoldRow = rowIndex === options.boldRowIndex;
+    if (isBoldRow) {
+      doc.rect(startX, y, tableWidth, rowHeight).fill(BRAND_SOFT);
+    } else if (rowIndex % 2 === 1) {
       doc.rect(startX, y, tableWidth, rowHeight).fill(ZEBRA);
     }
 
     let x = startX;
     row.forEach((cell, colIndex) => {
       const isHighlight = colIndex === options.highlightColumnIndex;
-      doc.font(isHighlight ? "Body-Bold" : "Body").fillColor(isHighlight ? (options.highlightColor ?? DANGER) : INK);
+      doc.font(isBoldRow || isHighlight ? "Body-Bold" : "Body").fillColor(isHighlight ? (options.highlightColor ?? DANGER) : INK);
       doc.text(cell, x + 8, y + 6, { width: columns[colIndex].width - 12, align: columns[colIndex].align ?? "left" });
       x += columns[colIndex].width;
     });
@@ -216,6 +223,22 @@ export function sendSummaryPdf(res: Response, summary: SemesterSummary, semester
   doc.end();
 }
 
+/** Grupuje wiersze zaległości po dziecku, zachowując kolejność z
+ * `getArrears` (dzieci już posortowane, kategorie idą jedna po drugiej
+ * dla tego samego dziecka — bez dodatkowego sortowania). */
+function groupArrearsByChild(rows: ArrearsRow[]): Array<{ childId: string; childName: string; rows: ArrearsRow[] }> {
+  const groups: Array<{ childId: string; childName: string; rows: ArrearsRow[] }> = [];
+  for (const row of rows) {
+    const current = groups[groups.length - 1];
+    if (current && current.childId === row.childId) {
+      current.rows.push(row);
+    } else {
+      groups.push({ childId: row.childId, childName: row.childName, rows: [row] });
+    }
+  }
+  return groups;
+}
+
 export function sendArrearsPdf(res: Response, rows: ArrearsRow[], semesterLabel: string) {
   const doc = startPdf(res, reportFilename("zaleglosci", semesterLabel));
   pdfHeader(doc, "Zestawienie zaległości", semesterLabel);
@@ -224,18 +247,41 @@ export function sendArrearsPdf(res: Response, rows: ArrearsRow[], semesterLabel:
     doc.fillColor(SUCCESS).font("Body-Bold").text("Brak zaległości — wszystko opłacone.");
     doc.fillColor(INK);
   } else {
-    pdfTable(
-      doc,
-      [
-        { header: "Dziecko", width: 140 },
-        { header: "Kategoria", width: 150 },
-        { header: "Plan", width: 75, align: "right" },
-        { header: "Wpłacono", width: 75, align: "right" },
-        { header: "Brakuje", width: 80, align: "right" },
-      ],
-      rows.map((r) => [r.childName, r.categoryName, currency.format(r.target), currency.format(r.paid), currency.format(r.remaining)]),
-      { highlightColumnIndex: 4, highlightColor: DANGER }
-    );
+    const columns: PdfColumn[] = [
+      { header: "Kategoria", width: 190 },
+      { header: "Plan", width: 90, align: "right" },
+      { header: "Wpłacono", width: 90, align: "right" },
+      { header: "Brakuje", width: 106, align: "right" },
+    ];
+
+    // Osobna mini-tabela na dziecko (jak karty na ekranie), z pogrubionym
+    // wierszem "Razem" zamykającym jego zaległości — żeby dało się od razu
+    // odczytać, ile w sumie brakuje na jedno dziecko, bez liczenia ręcznie.
+    for (const group of groupArrearsByChild(rows)) {
+      const sumTarget = group.rows.reduce((sum, r) => sum + r.target, 0);
+      const sumPaid = group.rows.reduce((sum, r) => sum + r.paid, 0);
+      const sumRemaining = group.rows.reduce((sum, r) => sum + r.remaining, 0);
+      const tableRows = [
+        ...group.rows.map((r) => [r.categoryName, currency.format(r.target), currency.format(r.paid), currency.format(r.remaining)]),
+        ["Razem", currency.format(sumTarget), currency.format(sumPaid), currency.format(sumRemaining)],
+      ];
+
+      // Nagłówek dziecka i jego tabela nie mogą się rozjechać na złamaniu
+      // strony — jeśli nie starczy miejsca choćby na nagłówek + jeden
+      // wiersz, od razu nowa strona.
+      if (doc.y > doc.page.height - doc.page.margins.bottom - 90) {
+        doc.addPage();
+      }
+
+      doc.font("Body-Bold").fontSize(12).fillColor(INK).text(group.childName);
+      doc.moveDown(0.3);
+      pdfTable(doc, columns, tableRows, {
+        highlightColumnIndex: 3,
+        highlightColor: DANGER,
+        boldRowIndex: tableRows.length - 1,
+      });
+      doc.moveDown(0.6);
+    }
   }
 
   doc.end();
@@ -333,12 +379,31 @@ export async function sendArrearsXlsx(res: Response, rows: ArrearsRow[], semeste
   styleHeaderRow(sheet.getRow(1));
   sheet.autoFilter = { from: "A1", to: "E1" };
 
-  for (const row of rows) sheet.addRow(row);
-  const lastDataRow = sheet.rowCount;
-  zebraStripe(sheet, 2, lastDataRow);
+  // Wiersze pogrupowane po dziecku (kolejność z `getArrears`), z pogrubionym
+  // podsumowującym wierszem "Razem" po każdym dziecku — żeby dało się od
+  // razu odczytać jego łączną zaległość bez liczenia ręcznie w arkuszu.
+  // Interleaving z wierszami "Razem" wyklucza tu zwykłą zebrę (nie miałaby
+  // czytelnego wzoru), więc odróżnienie niesie samo podświetlenie podsumowań.
+  for (const group of groupArrearsByChild(rows)) {
+    for (const row of group.rows) sheet.addRow(row);
 
-  // Kolumna "Brakuje" pogrubiona i na czerwono — ten sam sygnał co
-  // czerwone odznaki w appce.
+    const subtotalRow = sheet.addRow({
+      childName: group.childName,
+      categoryName: "Razem",
+      target: group.rows.reduce((sum, r) => sum + r.target, 0),
+      paid: group.rows.reduce((sum, r) => sum + r.paid, 0),
+      remaining: group.rows.reduce((sum, r) => sum + r.remaining, 0),
+    });
+    subtotalRow.eachCell({ includeEmpty: true }, (cell) => {
+      cell.font = { bold: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ARGB_BRAND_SOFT } };
+    });
+  }
+  const lastDataRow = sheet.rowCount;
+
+  // Kolumna "Brakuje" dodatkowo na czerwono w każdym wierszu (w tym w
+  // wierszach "Razem", gdzie fill+bold powyżej już oznaczył podsumowanie)
+  // — ten sam sygnał co czerwone odznaki w appce.
   for (let r = 2; r <= lastDataRow; r++) {
     const cell = sheet.getRow(r).getCell(5);
     cell.font = { bold: true, color: { argb: ARGB_DANGER } };

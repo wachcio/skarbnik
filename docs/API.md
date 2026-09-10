@@ -91,7 +91,7 @@ Druga strona bilansu obok wpłat — skarbnik wydaje pieniądze na dany cel (kat
 | GET | `/api/reports/summary?semesterId=` | Admin | Zestawienie zbiorcze grupy dla semestru: zebrano/plan/wydano wg kategorii (reużywa `services/reports.service.ts`). | ✅ |
 | GET | `/api/reports/balance` | Admin | Stan kasy skarbnika — suma wszystkich wpłat minus suma wszystkich wydatków, za całą historię (wszystkie semestry razem, niezależnie od parametru semestru). | ✅ |
 | GET | `/api/reports/child/:id?semesterId=` | Admin | Karta wpłat pojedynczego dziecka. | ✅ |
-| GET | `/api/reports/export?report=summary\|arrears&format=pdf\|xlsx&semesterId=` | Admin | Eksport zestawienia zbiorczego lub zaległości do pliku (PDF z osadzonym fontem PT Sans dla polskich znaków, albo XLSX). | ✅ |
+| GET | `/api/reports/export?report=summary\|arrears&format=pdf\|xlsx&semesterId=` | Admin | Eksport zestawienia zbiorczego lub zaległości do pliku (PDF z osadzonym fontem PT Sans dla polskich znaków, albo XLSX). Zaległości pogrupowane po dziecku, z pogrubionym wierszem „Razem” podsumowującym zaległość każdego dziecka. | ✅ |
 
 ## Import / eksport
 

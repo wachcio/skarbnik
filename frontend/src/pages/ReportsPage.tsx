@@ -67,10 +67,11 @@ export function ReportsPage() {
       ? Math.min(100, Math.round((summary.collectedTotal / summary.targetTotal) * 100))
       : 0;
 
-  const arrearsByChild = new Map<string, { childName: string; rows: ArrearsRow[] }>();
+  const arrearsByChild = new Map<string, { childName: string; rows: ArrearsRow[]; total: number }>();
   for (const row of arrears ?? []) {
-    const entry = arrearsByChild.get(row.childId) ?? { childName: row.childName, rows: [] };
+    const entry = arrearsByChild.get(row.childId) ?? { childName: row.childName, rows: [], total: 0 };
     entry.rows.push(row);
+    entry.total += row.remaining;
     arrearsByChild.set(row.childId, entry);
   }
 
@@ -187,9 +188,12 @@ export function ReportsPage() {
         <ul className="list">
           {Array.from(arrearsByChild.entries()).map(([childId, entry]) => (
             <li key={childId} className="card category-item">
-              <Link to={`/children/${childId}`} className="arrears-child-link">
-                <strong>{entry.childName}</strong>
-              </Link>
+              <div className="category-item-header">
+                <Link to={`/children/${childId}`} className="arrears-child-link">
+                  <strong>{entry.childName}</strong>
+                </Link>
+                <span className="status-pill danger">razem {currency.format(entry.total)}</span>
+              </div>
               <ul className="payment-list">
                 {entry.rows.map((row) => (
                   <li key={row.categoryId} className="payment-row">
