@@ -318,6 +318,22 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
       powiadomienia e-mail/SMS o zaległościach, samodzielna rejestracja
       rodziców kodem zaproszenia zamiast ręcznego tworzenia kont.
 
+### 2026-09-10 (18) — Pełny raport dziecka (oba semestry naraz)
+- Widok dziecka pokazywał rozliczenie jednego semestru na raz
+  (przełącznik u góry sekcji Składki). Nowa karta „Raport” dodaje
+  możliwość pobrania PDF/Excel z pełną kartą dziecka: dane kontaktowe/
+  notatki + rozliczenie i historia wpłat za OBA semestry na jednym
+  dokumencie, plus podsumowanie łączne na końcu.
+- Nowy `getChildFullReport()` (reużywa istniejący `getChildLedger` per
+  semestr) i `GET /api/children/:id/report?format=pdf|xlsx`, z tym
+  samym progiem dostępu co `/ledger` — dostępne więc też dla rodzica
+  przeglądającego kartę własnego dziecka, nie tylko dla admina.
+- **Zweryfikowane** na żywym Dockerze+MySQL: dziecko z wpłatami w obu
+  semestrach, PDF obejrzany (pdftoppm) — poprawne sumy per semestr i
+  łącznie, historia wpłat chronologicznie; Excel odczytany programowo —
+  te same liczby. Kontrola dostępu: rodzic własnego dziecka 200, rodzic
+  innego dziecka 403. Ekran zweryfikowany Playwrightem w obu motywach.
+
 ### 2026-09-10 (17) — Odzyskiwanie hasła administratora (komenda serwerowa)
 - Poprzedni wpis dotyczył zmiany WŁASNEGO hasła ze znajomością obecnego —
   ten dotyczy scenariusza "zapomniałem hasła". Użytkownik poproszony o
