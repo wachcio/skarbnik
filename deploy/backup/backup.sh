@@ -6,9 +6,25 @@
 # świadomie nie rusza) i da się przywrócić jednym `mysql < dump.sql` bez
 # udziału samej appki — to jest kopia na wypadek katastrofy, nie funkcja
 # do przenoszenia danych między appkami.
+#
+# Częstotliwość: BACKUP_INTERVAL_HOURS w .env (domyślnie 24). Retencja:
+# BACKUP_RETENTION_DAYS w .env (domyślnie 14) — patrz niżej.
 set -eu
 
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+
+# Walidacja: jeśli ktoś wpisze do .env coś niepoprawnego (puste, litery,
+# zero, ujemną liczbę), wracamy do bezpiecznego domyślnego 24h zamiast
+# przekazać śmieciową wartość do `sleep` (co skończyłoby się błędem i
+# ubiciem całej pętli backupów).
+case "${BACKUP_INTERVAL_HOURS:-24}" in
+  ''|*[!0-9]*|0)
+    INTERVAL_HOURS=24
+    ;;
+  *)
+    INTERVAL_HOURS="${BACKUP_INTERVAL_HOURS:-24}"
+    ;;
+esac
 
 backup_once() {
   timestamp="$(date +%Y%m%d-%H%M%S)"
@@ -65,7 +81,7 @@ while :; do
     attempt=1
     while ! backup_once; do
       if [ "$attempt" -ge 5 ]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Rezygnuję po 5 próbach, spróbuję ponownie za 24h." >&2
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Rezygnuję po 5 próbach, spróbuję ponownie za ${INTERVAL_HOURS}h." >&2
         break
       fi
       attempt=$((attempt + 1))
@@ -74,8 +90,8 @@ while :; do
     done
     first_attempt=false
   else
-    backup_once || echo "[$(date '+%Y-%m-%d %H:%M:%S')] Ponowię próbę za 24h." >&2
+    backup_once || echo "[$(date '+%Y-%m-%d %H:%M:%S')] Ponowię próbę za ${INTERVAL_HOURS}h." >&2
   fi
-  sleep 24h &
+  sleep "${INTERVAL_HOURS}h" &
   wait "$!"
 done

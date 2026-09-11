@@ -74,9 +74,18 @@ sieci Dockera.
 ## Automatyczne kopie zapasowe bazy
 
 Usługa `backup` w `docker-compose.yml` jest **zawsze włączona** (nie wymaga
-żadnego profilu) — co 24h robi pełny zrzut bazy (`mysqldump`, spakowany
+żadnego profilu) — cyklicznie robi pełny zrzut bazy (`mysqldump`, spakowany
 `gzip`em) do katalogu `./backups/` na hoście, z automatyczną rotacją starych
-plików (`BACKUP_RETENTION_DAYS` w `.env`, domyślnie 14 dni). To osobna rzecz
+plików. Częstotliwość i retencję ustawia się w `.env`:
+
+```
+BACKUP_INTERVAL_HOURS=24   # co ile godzin nowa kopia (domyślnie raz dziennie)
+BACKUP_RETENTION_DAYS=14   # po ilu dniach starsze kopie są kasowane
+```
+
+Zmianę stosujesz przez `docker compose up -d --force-recreate backup` (samo
+`docker compose up -d` też wystarczy, jeśli inne usługi i tak restartujesz).
+To osobna rzecz
 od ręcznego eksportu JSON z poziomu appki (Ustawienia → Kopia zapasowa) —
 `mysqldump` obejmuje dosłownie wszystko w bazie (łącznie z sesjami i logiem
 audytowym) i da się przywrócić bez udziału samej appki, czyli nadaje się na
