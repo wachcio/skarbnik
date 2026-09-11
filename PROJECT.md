@@ -334,6 +334,40 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   Playwright: stopka widoczna i poprawnie sformatowana w Ustawieniach
   dla admina i rodzica, oba motywy.
 
+### 2026-09-11 (32) — Automatyczne kopie zapasowe bazy (mysqldump + rotacja)
+- Nowa usługa `backup` w `docker-compose.yml` — **zawsze włączona**, bez
+  profilu (nie publikuje portu, nie może z niczym kolidować, więc działa
+  identycznie w domu i na VPS-ie). Co 24h pełny `mysqldump` całej bazy,
+  spakowany gzipem, do `./backups/` na hoście, z rotacją starszych plików
+  niż `BACKUP_RETENTION_DAYS` (nowa zmienna w `.env`, domyślnie 14 dni).
+- To coś innego niż istniejący eksport JSON z Ustawień: `mysqldump`
+  obejmuje dosłownie wszystko (łącznie z `sessions` i `audit_logs`,
+  których eksport JSON świadomie nie rusza) i przywraca się jednym
+  `mysql < dump.sql` bez udziału appki — realna kopia awaryjna, nie
+  tylko przenoszenie danych między instancjami.
+- **Dwa realne błędy złapane przy testowaniu skryptu na żywo, nie przy
+  czytaniu kodu**: (1) `mysqldump | gzip > plik` w jednym poleceniu
+  maskowało status wyjścia mysqldump za statusem gzipa — nieudany
+  mysqldump (np. baza jeszcze niegotowa mimo `service_healthy`)
+  produkował mimo to 20-bajtowy plik zgłoszony jako "OK". Naprawione
+  przez rozdzielenie na dwa kroki (dump do pliku tymczasowego, potem
+  gzip), każdy ze sprawdzonym własnym statusem. (2) MySQL bywa jeszcze
+  chwilę niegotowy do połączeń z sieci Dockera tuż po starcie mimo
+  przejścia healthchecka (zweryfikowane: to realnie się zdarzyło) —
+  dodane do 5 szybkich ponowień co 10s tylko dla pierwszego backupu po
+  starcie kontenera, żeby jeden pechowy moment nie kosztował całej doby.
+- **Zweryfikowane** na pełnym Dockerze+MySQL (po migracji i seedzie):
+  zrzut zawiera poprawnie wszystkie 13 tabel i dane admina z seeda;
+  przywrócony do osobnej, pustej bazy na tym samym serwerze MySQL —
+  wszystkie tabele i dane wróciły poprawnie; rotacja realnie usuwa plik
+  podbity datą sprzed okresu retencji, zostawiając nowszy. `docker
+  compose config` z prawdziwym `.env.example` parsuje się czysto z nową
+  usługą i zmienną.
+- README.md: procedura przywracania + jasne zastrzeżenie, że sam
+  katalog `./backups/` nie chroni przed utratą całego VPS-a — kopia
+  poza serwer to świadomie osobny krok, zależny od infrastruktury
+  użytkownika.
+
 ### 2026-09-11 (31) — Automatyczny reload nginksa po odnowieniu certyfikatu
 - Użytkownik zapytał, czy certyfikat będzie się sam odnawiał — odpowiedź
   ujawniła realną lukę: `certbot` co 12h faktycznie podmienia plik
