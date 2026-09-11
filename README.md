@@ -71,6 +71,35 @@ Portów `4000`/`5173`/`3306` nie trzeba (i nie powinno się) wystawiać
 na zewnątrz — z nimi rozmawia już tylko kontener `nginx`, po wewnętrznej
 sieci Dockera.
 
+## Automatyczne kopie zapasowe bazy
+
+Usługa `backup` w `docker-compose.yml` jest **zawsze włączona** (nie wymaga
+żadnego profilu) — co 24h robi pełny zrzut bazy (`mysqldump`, spakowany
+`gzip`em) do katalogu `./backups/` na hoście, z automatyczną rotacją starych
+plików (`BACKUP_RETENTION_DAYS` w `.env`, domyślnie 14 dni). To osobna rzecz
+od ręcznego eksportu JSON z poziomu appki (Ustawienia → Kopia zapasowa) —
+`mysqldump` obejmuje dosłownie wszystko w bazie (łącznie z sesjami i logiem
+audytowym) i da się przywrócić bez udziału samej appki, czyli nadaje się na
+prawdziwą kopię awaryjną, a nie tylko przenoszenie danych.
+
+Przywracanie (np. po awarii serwera, na nowej maszynie):
+
+```bash
+# baza MUSI już istnieć i być pusta (świeże `docker compose up -d` + jeszcze
+# bez `prisma:migrate:deploy`, albo nowa pusta baza) — mysqldump w tym
+# zrzucie zawiera też CREATE TABLE, więc migracje Prisma nie są tu potrzebne
+gunzip -c backups/skarbnik-<data>.sql.gz | docker compose exec -T mysql \
+  mysql -u root -p"$(grep -m1 '^MYSQL_ROOT_PASSWORD=' .env | cut -d= -f2)" \
+  "$(grep -m1 '^MYSQL_DATABASE=' .env | cut -d= -f2)"
+```
+
+**Katalog `./backups/` żyje tylko na tym jednym serwerze** — to chroni przed
+przypadkowym `DROP TABLE`/błędem appki, ale NIE przed awarią całego dysku/VPS-a.
+Do prawdziwego bezpieczeństwa warto dodatkowo kopiować ten katalog gdzieś
+poza serwer (np. `rsync`/`rclone` do innej maszyny lub magazynu w chmurze,
+odpalane cyklicznie z crona) — to już świadomie poza zakresem tego repo,
+bo wymaga danych dostępowych specyficznych dla Twojej infrastruktury.
+
 ## Odzyskiwanie hasła administratora
 
 Admin może zmienić własne hasło samodzielnie w Ustawieniach (o ile pamięta

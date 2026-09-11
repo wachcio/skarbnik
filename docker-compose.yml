@@ -57,6 +57,27 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
 
+  # Automatyczna kopia zapasowa bazy (mysqldump, nie eksport JSON z UI —
+  # patrz deploy/backup/backup.sh) co 24h, z rotacją starych plików. Zawsze
+  # włączona (bez profilu) — nie publikuje żadnego portu, nie koliduje z
+  # niczym, więc działa tak samo w domu jak i na VPS-ie.
+  backup:
+    image: mysql:8.4
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./deploy/backup/backup.sh:/backup.sh:ro
+    entrypoint: ["/bin/sh", "/backup.sh"]
+
   # --- Samodzielny reverse proxy (bez NGINX Proxy Managera) ---
   # Opcjonalne usługi, WYŁĄCZONE domyślnie (profil `standalone-proxy`), żeby
   # nie kolidować z portami 80/443 na wdrożeniach, które i tak stawiają NGINX
