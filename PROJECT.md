@@ -367,6 +367,13 @@ mobile-first). Jedyny brakujący element to eksport raportów do PDF/Excel.
   katalog `./backups/` nie chroni przed utratą całego VPS-a — kopia
   poza serwer to świadomie osobny krok, zależny od infrastruktury
   użytkownika.
+- **Dopisek tego samego dnia:** dodana `BACKUP_INTERVAL_HOURS` (domyślnie
+  24) — częstotliwość kopii obok istniejącej `BACKUP_RETENTION_DAYS`,
+  z walidacją w skrypcie (pusta/nienumeryczna/zerowa/ujemna wartość
+  bezpiecznie wraca do 24h zamiast trafić do `sleep` i ubić pętlę).
+  Zweryfikowane: poprawne i niepoprawne wartości przechodzą walidację
+  jak trzeba, a na żywym kontenerze potwierdzone przez `/proc/*/cmdline`,
+  że faktycznie uruchomiony proces to `sleep 6h` dla ustawienia `=6`.
 
 ### 2026-09-11 (31) — Automatyczny reload nginksa po odnowieniu certyfikatu
 - Użytkownik zapytał, czy certyfikat będzie się sam odnawiał — odpowiedź
